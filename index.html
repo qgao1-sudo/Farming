@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Gloria's Magic Farm - 魔法农场 ✨</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 游戏主容器 -->
+    <div id="game-container">
+        <!-- 顶部横幅 -->
+        <header class="game-header">
+            <h1>✨ Gloria's Magic Farm ✨</h1>
+            <p class="subtitle">一个关于效率和规划的农场经营游戏</p>
+        </header>
+
+        <!-- 游戏主界面 -->
+        <div class="game-main">
+            <!-- 左侧面板 - 玩家信息 -->
+            <aside class="left-panel">
+                <!-- 玩家信息卡片 -->
+                <div class="panel-card player-info">
+                    <h2>🧑‍🌾 玩家信息</h2>
+                    <div class="info-item">
+                        <span class="label">姓名:</span>
+                        <span id="player-name">Gloria</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">等级:</span>
+                        <span id="player-level">1</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">💰 金币:</span>
+                        <span id="player-gold" class="highlight">1000</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">💎 钻石:</span>
+                        <span id="player-diamond" class="highlight">10</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">⭐ 信誉:</span>
+                        <span id="player-reputation">50/100</span>
+                    </div>
+                </div>
+
+                <!-- 游戏时间 -->
+                <div class="panel-card time-info">
+                    <h2>🗓️ 游戏时间</h2>
+                    <div class="info-item">
+                        <span class="label">日期:</span>
+                        <span id="game-date">2024年5月1日</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">游戏天数:</span>
+                        <span id="game-day">第 1 天</span>
+                    </div>
+                    <button id="advance-day-btn" class="btn btn-primary">⏭️ 下一天</button>
+                </div>
+
+                <!-- 月度指标 -->
+                <div class="panel-card target-info">
+                    <h2>📋 月度指标</h2>
+                    <div id="target-description" class="target-desc">
+                        收获 350 个 小麦
+                    </div>
+                    <div class="progress-bar">
+                        <div id="target-progress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="info-item">
+                        <span id="target-current">0</span> / <span id="target-total">350</span>
+                        (<span id="target-percent">0</span>%)
+                    </div>
+                    <div class="info-item">
+                        <span class="label">剩余天数:</span>
+                        <span id="days-remaining">30</span> 天
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="panel-card quick-actions">
+                    <h2>⚡ 快捷操作</h2>
+                    <button id="water-all-btn" class="btn btn-action">💧 全部浇水</button>
+                    <button id="fertilize-all-btn" class="btn btn-action">🌱 全部施肥 (20金币/块)</button>
+                    <button id="harvest-all-btn" class="btn btn-success">🌾 收获所有</button>
+                </div>
+            </aside>
+
+            <!-- 中间 - 农场 -->
+            <main class="farm-area">
+                <div class="farm-header">
+                    <h2>🏞️ 农场 (9块地)</h2>
+                    <div class="farm-stats">
+                        <span>已使用: <span id="occupied-plots">0</span>/9</span>
+                        <span>可收获: <span id="harvestable-plots">0</span></span>
+                    </div>
+                </div>
+
+                <!-- 农场地块 -->
+                <div id="farm-grid" class="farm-grid">
+                    <!-- 9个地块，由JavaScript动态生成 -->
+                </div>
+            </main>
+
+            <!-- 右侧面板 - 商店和建议 -->
+            <aside class="right-panel">
+                <!-- 种子商店 -->
+                <div class="panel-card shop">
+                    <h2>🏪 种子商店</h2>
+                    <div class="shop-filter">
+                        <button class="filter-btn active" data-category="all">全部</button>
+                        <button class="filter-btn" data-category="vegetable">蔬菜</button>
+                        <button class="filter-btn" data-category="fruit">水果</button>
+                        <button class="filter-btn" data-category="flower">花卉</button>
+                        <button class="filter-btn" data-category="special">特殊</button>
+                    </div>
+                    <div id="shop-items" class="shop-items">
+                        <!-- 商品列表由JavaScript生成 -->
+                    </div>
+                </div>
+
+                <!-- 种植建议 -->
+                <div class="panel-card suggestions">
+                    <h2>💡 智能建议</h2>
+                    <button id="show-suggestions-btn" class="btn btn-info">📊 查看种植建议</button>
+                    <div id="suggestions-list" class="suggestions-list" style="display: none;">
+                        <!-- 建议列表由JavaScript生成 -->
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 游戏日志 -->
+        <div class="game-log">
+            <h3>📜 游戏日志</h3>
+            <div id="log-content" class="log-content">
+                <div class="log-entry">🎮 欢迎来到 Gloria's Magic Farm！</div>
+                <div class="log-entry">📋 本月指标已发布，快去查看吧！</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态窗口 - 地块详情 -->
+    <div id="plot-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">地块详情</h2>
+            <div id="modal-body">
+                <!-- 内容由JavaScript生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态窗口 - 月度结算 -->
+    <div id="settlement-modal" class="modal">
+        <div class="modal-content settlement-content">
+            <h2>🗓️ 月度结算</h2>
+            <div id="settlement-body">
+                <!-- 内容由JavaScript生成 -->
+            </div>
+            <button id="close-settlement-btn" class="btn btn-primary">继续游戏</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
