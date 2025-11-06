@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Gloria's Magic Farm ✨</title>
+    <link rel="stylesheet" href="styles-en.css">
+</head>
+<body>
+    <!-- Game Container -->
+    <div id="game-container">
+        <!-- Top Banner -->
+        <header class="game-header">
+            <div class="header-decoration">🌟🌟🌟</div>
+            <h1>Gloria's Magic Farm</h1>
+            <p class="subtitle">A Pixel Perfect Farming Adventure</p>
+            <div class="header-decoration">🌟🌟🌟</div>
+        </header>
+
+        <!-- Main Game Area -->
+        <div class="game-main">
+            <!-- Left Panel - Player Info -->
+            <aside class="left-panel">
+                <!-- Player Card -->
+                <div class="panel-card player-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">🧑‍🌾</span>
+                        <h2>FARMER</h2>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Name:</span>
+                        <span id="player-name" class="stat-value">Gloria</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Level:</span>
+                        <span id="player-level" class="stat-value">1</span>
+                    </div>
+                    <div class="stat-row highlight-row">
+                        <span class="stat-label">💰 Gold:</span>
+                        <span id="player-gold" class="stat-value gold">1000</span>
+                    </div>
+                    <div class="stat-row highlight-row">
+                        <span class="stat-label">💎 Gems:</span>
+                        <span id="player-diamond" class="stat-value gem">10</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">⭐ Fame:</span>
+                        <span id="player-reputation" class="stat-value">50/100</span>
+                    </div>
+                </div>
+
+                <!-- Time Card -->
+                <div class="panel-card time-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">📅</span>
+                        <h2>CALENDAR</h2>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Date:</span>
+                        <span id="game-date" class="stat-value">May 1, 2024</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Day:</span>
+                        <span id="game-day" class="stat-value">Day 1</span>
+                    </div>
+                    <button id="advance-day-btn" class="pixel-btn btn-primary">
+                        ⏭️ NEXT DAY
+                    </button>
+                </div>
+
+                <!-- Monthly Goal -->
+                <div class="panel-card goal-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">🎯</span>
+                        <h2>MONTHLY GOAL</h2>
+                    </div>
+                    <div class="goal-desc pixel-box" id="target-description">
+                        Harvest 350 Wheat
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div id="target-progress" class="progress-fill" style="width: 0%">
+                                <span class="progress-text">0%</span>
+                            </div>
+                        </div>
+                        <div class="progress-numbers">
+                            <span id="target-current">0</span> / <span id="target-total">350</span>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">⏰ Days Left:</span>
+                        <span id="days-remaining" class="stat-value">30</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="panel-card actions-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">⚡</span>
+                        <h2>ACTIONS</h2>
+                    </div>
+                    <button id="water-all-btn" class="pixel-btn btn-blue">💧 WATER ALL</button>
+                    <button id="fertilize-all-btn" class="pixel-btn btn-green">🌱 FERTILIZE (20g)</button>
+                    <button id="harvest-all-btn" class="pixel-btn btn-yellow">🌾 HARVEST ALL</button>
+                </div>
+            </aside>
+
+            <!-- Center - Farm Area -->
+            <main class="farm-area">
+                <div class="farm-header pixel-border">
+                    <div class="farm-title">
+                        <span class="icon">🏞️</span>
+                        <h2>MY FARM</h2>
+                    </div>
+                    <div class="farm-stats">
+                        <div class="stat-badge">
+                            <span class="badge-label">PLOTS:</span>
+                            <span class="badge-value"><span id="occupied-plots">0</span>/9</span>
+                        </div>
+                        <div class="stat-badge ready">
+                            <span class="badge-label">READY:</span>
+                            <span class="badge-value" id="harvestable-plots">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Farm Grid -->
+                <div id="farm-grid" class="farm-grid"></div>
+
+                <!-- Helper Text -->
+                <div class="helper-text pixel-box">
+                    💡 TIP: Click empty plots to plant crops! Click crops to care for them.
+                </div>
+            </main>
+
+            <!-- Right Panel - Shop & Tips -->
+            <aside class="right-panel">
+                <!-- Seed Shop -->
+                <div class="panel-card shop-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">🏪</span>
+                        <h2>SEED SHOP</h2>
+                    </div>
+                    <div class="shop-filter">
+                        <button class="filter-btn active pixel-btn-sm" data-category="all">ALL</button>
+                        <button class="filter-btn pixel-btn-sm" data-category="vegetable">🥕</button>
+                        <button class="filter-btn pixel-btn-sm" data-category="fruit">🍓</button>
+                        <button class="filter-btn pixel-btn-sm" data-category="flower">🌸</button>
+                        <button class="filter-btn pixel-btn-sm" data-category="special">✨</button>
+                    </div>
+                    <div id="shop-items" class="shop-items"></div>
+                </div>
+
+                <!-- Smart Planner -->
+                <div class="panel-card planner-card pixel-border">
+                    <div class="card-header">
+                        <span class="icon">💡</span>
+                        <h2>PLANNER</h2>
+                    </div>
+                    <button id="show-suggestions-btn" class="pixel-btn btn-info">
+                        📊 SHOW TIPS
+                    </button>
+                    <div id="suggestions-list" class="suggestions-list" style="display: none;"></div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Game Log -->
+        <div class="game-log pixel-border">
+            <div class="log-header">
+                <span class="icon">📜</span>
+                <h3>ACTIVITY LOG</h3>
+            </div>
+            <div id="log-content" class="log-content"></div>
+        </div>
+    </div>
+
+    <!-- Modal - Plot Details -->
+    <div id="plot-modal" class="modal">
+        <div class="modal-content pixel-border">
+            <span class="close">×</span>
+            <h2 id="modal-title" class="modal-header">PLOT DETAILS</h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Modal - Monthly Settlement -->
+    <div id="settlement-modal" class="modal">
+        <div class="modal-content pixel-border settlement-modal">
+            <h2 class="modal-header">📋 MONTHLY REPORT</h2>
+            <div id="settlement-body"></div>
+            <button id="close-settlement-btn" class="pixel-btn btn-primary">CONTINUE</button>
+        </div>
+    </div>
+
+    <script src="game-en.js"></script>
+</body>
+</html>
