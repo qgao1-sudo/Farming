@@ -4,7 +4,19 @@
 
 ## 🎮 在线游玩
 
+### 🇨🇳 中文版
 **🌐 网页版游戏**: [点击这里直接在浏览器中玩！](https://qgao1-sudo.github.io/Farming/)
+
+### 🇬🇧 English Version (Kairosoft Pixel Style!)
+**🌐 Play Now**: [English Kairosoft-Style Game](https://htmlpreview.github.io/?https://github.com/qgao1-sudo/Farming/blob/claude/glorias-magic-farm-game-011CUqjsS921Lq5M68pJvTrG/index-en.html)
+
+**Features:**
+- 🎨 Authentic Kairosoft pixel art style
+- ✨ Bright, saturated retro colors
+- 🎯 Pixel-perfect borders and shadows
+- 📊 Animated progress bars
+- 💫 Bouncing header animations
+- 🌟 All text in English
 
 不需要安装任何软件，直接在浏览器中体验完整游戏！
 
