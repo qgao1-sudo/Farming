@@ -206,15 +206,14 @@
 
     <div id="controls">
         🖱️ Click plots to plant/harvest<br>
-        🎮 WASD to move camera<br>
         📷 Drag mouse to rotate view<br>
-        🔍 Scroll to zoom in/out
+        🔍 Scroll to zoom in/out<br>
+        🎮 W/S to rotate, A/D to zoom
     </div>
 
     <div id="message"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
 // ==================== GAME DATA ====================
 const CROPS = {
@@ -286,16 +285,19 @@ class FarmGame {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
 
-        // OrbitControls for camera
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-        this.controls.minDistance = 15;
-        this.controls.maxDistance = 60;
-        this.controls.maxPolarAngle = Math.PI / 2.2;
+        // Manual camera controls
+        this.isDragging = false;
+        this.previousMousePosition = { x: 0, y: 0 };
+        this.cameraAngle = 0;
+        this.cameraHeight = 25;
+        this.cameraDistance = 35;
 
         // Event listeners
         window.addEventListener('resize', () => this.onWindowResize(), false);
+        window.addEventListener('mousedown', (e) => this.onMouseDown(e), false);
+        window.addEventListener('mousemove', (e) => this.onMouseMove(e), false);
+        window.addEventListener('mouseup', () => this.onMouseUp(), false);
+        window.addEventListener('wheel', (e) => this.onMouseWheel(e), false);
         window.addEventListener('click', (e) => this.onMouseClick(e), false);
         window.addEventListener('keydown', (e) => this.onKeyDown(e), false);
     }
@@ -880,7 +882,38 @@ class FarmGame {
         }, 2000);
     }
 
+    onMouseDown(event) {
+        if(event.button === 0) { // Left click
+            this.isDragging = true;
+            this.previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+    }
+
+    onMouseMove(event) {
+        if(this.isDragging) {
+            const deltaX = event.clientX - this.previousMousePosition.x;
+            const deltaY = event.clientY - this.previousMousePosition.y;
+
+            this.cameraAngle += deltaX * 0.005;
+            this.cameraHeight = Math.max(10, Math.min(50, this.cameraHeight - deltaY * 0.1));
+
+            this.previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+    }
+
+    onMouseUp() {
+        this.isDragging = false;
+    }
+
+    onMouseWheel(event) {
+        event.preventDefault();
+        this.cameraDistance += event.deltaY * 0.01;
+        this.cameraDistance = Math.max(15, Math.min(60, this.cameraDistance));
+    }
+
     onMouseClick(event) {
+        if(this.isDragging) return; // Don't click if we were dragging
+
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -904,26 +937,21 @@ class FarmGame {
     }
 
     onKeyDown(event) {
-        const speed = 2;
+        const speed = 0.5;
         switch(event.key) {
             case 'w': case 'W':
-                this.camera.position.z -= speed;
-                this.controls.target.z -= speed;
+                this.cameraAngle -= speed;
                 break;
             case 's': case 'S':
-                this.camera.position.z += speed;
-                this.controls.target.z += speed;
+                this.cameraAngle += speed;
                 break;
             case 'a': case 'A':
-                this.camera.position.x -= speed;
-                this.controls.target.x -= speed;
+                this.cameraDistance = Math.max(15, this.cameraDistance - 2);
                 break;
             case 'd': case 'D':
-                this.camera.position.x += speed;
-                this.controls.target.x += speed;
+                this.cameraDistance = Math.min(60, this.cameraDistance + 2);
                 break;
         }
-        this.controls.update();
     }
 
     onWindowResize() {
@@ -938,10 +966,11 @@ class FarmGame {
 
         this.updateCharacter();
 
-        // Update controls
-        if(this.controls) {
-            this.controls.update();
-        }
+        // Update camera position based on angle and distance
+        this.camera.position.x = Math.sin(this.cameraAngle) * this.cameraDistance;
+        this.camera.position.z = Math.cos(this.cameraAngle) * this.cameraDistance;
+        this.camera.position.y = this.cameraHeight;
+        this.camera.lookAt(0, 0, 0);
 
         this.renderer.render(this.scene, this.camera);
     }
