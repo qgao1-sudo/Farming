@@ -217,6 +217,140 @@
         .house-window:first-of-type { left: 8px; }
         .house-window:last-of-type { right: 8px; }
 
+        /* Character - Pixel art farmer */
+        #character {
+            position: absolute;
+            width: 32px;
+            height: 40px;
+            transition: all 1s ease-in-out;
+            z-index: 100;
+            left: 50%;
+            top: 50%;
+        }
+
+        .character-body {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Head */
+        .char-head {
+            width: 12px;
+            height: 12px;
+            background: #FFE0BD;
+            border: 2px solid #333;
+            position: absolute;
+            top: 0;
+            left: 10px;
+            box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+
+        /* Hat */
+        .char-hat {
+            width: 16px;
+            height: 6px;
+            background: #FFD700;
+            border: 2px solid #333;
+            position: absolute;
+            top: -4px;
+            left: 8px;
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* Body */
+        .char-torso {
+            width: 16px;
+            height: 12px;
+            background: #4169E1;
+            border: 2px solid #333;
+            position: absolute;
+            top: 14px;
+            left: 8px;
+        }
+
+        /* Arms */
+        .char-arm {
+            width: 6px;
+            height: 10px;
+            background: #FFE0BD;
+            border: 2px solid #333;
+            position: absolute;
+            top: 16px;
+        }
+
+        .char-arm.left { left: 4px; }
+        .char-arm.right { right: 4px; }
+
+        /* Legs */
+        .char-leg {
+            width: 6px;
+            height: 10px;
+            background: #654321;
+            border: 2px solid #333;
+            position: absolute;
+            top: 28px;
+        }
+
+        .char-leg.left { left: 9px; }
+        .char-leg.right { right: 9px; }
+
+        /* Walking animation */
+        @keyframes walk {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        #character.walking .char-leg.left {
+            animation: walk 0.4s infinite;
+        }
+
+        #character.walking .char-leg.right {
+            animation: walk 0.4s infinite;
+            animation-delay: 0.2s;
+        }
+
+        /* Emoji bubble */
+        .emoji-bubble {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: white;
+            border: 3px solid #333;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 101;
+        }
+
+        .emoji-bubble.show {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        /* Bubble tail */
+        .emoji-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid white;
+            filter: drop-shadow(1px 2px 0 #333);
+        }
+
         /* Farm grid */
         #farm-grid {
             display: grid;
@@ -535,6 +669,21 @@
                         <div class="house-door"></div>
                     </div>
                 </div>
+
+                <!-- Character -->
+                <div id="character">
+                    <div class="emoji-bubble"></div>
+                    <div class="character-body">
+                        <div class="char-hat"></div>
+                        <div class="char-head"></div>
+                        <div class="char-torso"></div>
+                        <div class="char-arm left"></div>
+                        <div class="char-arm right"></div>
+                        <div class="char-leg left"></div>
+                        <div class="char-leg right"></div>
+                    </div>
+                </div>
+
                 <div id="farm-grid"></div>
             </div>
 
@@ -564,6 +713,8 @@
     <script>
 const CROPS={Wheat:{name:"Wheat",icon:"🌾",price:10,days:2,yield:30,sell:5},Carrot:{name:"Carrot",icon:"🥕",price:15,days:3,yield:20,sell:8},Tomato:{name:"Tomato",icon:"🍅",price:30,days:4,yield:10,sell:15},Strawberry:{name:"Strawberry",icon:"🍓",price:50,days:5,yield:15,sell:20},Sunflower:{name:"Sunflower",icon:"🌻",price:40,days:5,yield:10,sell:18},Pumpkin:{name:"Pumpkin",icon:"🎃",price:200,days:8,yield:1,sell:300}};
 
+const EMOJIS = ['😊', '🤔', '😴', '💪', '❤️', '💰', '🌾', '💦', '🎉', '✨', '🌟', '🌈'];
+
 class Game{
     constructor(){
         this.gold=1000;this.gems=10;this.fame=50;
@@ -571,6 +722,7 @@ class Game{
         this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null}));
         this.target={type:"harvest",crop:"Wheat",val:350};
         this.harvested={};
+        this.character={x:50,y:50,moving:false};
         this.init();
     }
     init(){
@@ -585,6 +737,70 @@ class Game{
         }
         this.renderShop();
         this.render();
+
+        // Start character movement
+        this.startCharacterMovement();
+
+        // Show emoji every 3-5 seconds
+        setInterval(() => {
+            if (!this.character.moving) {
+                this.showEmoji();
+            }
+        }, Math.random() * 2000 + 3000);
+    }
+
+    startCharacterMovement() {
+        setInterval(() => {
+            if (!this.character.moving) {
+                this.moveCharacter();
+            }
+        }, 4000);
+    }
+
+    moveCharacter() {
+        const char = document.getElementById('character');
+        const container = document.getElementById('farm-container');
+
+        // Random position within farm area
+        const maxX = 80; // percentage
+        const maxY = 80;
+        const minX = 10;
+        const minY = 20;
+
+        const newX = Math.random() * (maxX - minX) + minX;
+        const newY = Math.random() * (maxY - minY) + minY;
+
+        this.character.x = newX;
+        this.character.y = newY;
+        this.character.moving = true;
+
+        char.classList.add('walking');
+        char.style.left = newX + '%';
+        char.style.top = newY + '%';
+
+        // Randomly show emoji during movement
+        if (Math.random() > 0.5) {
+            setTimeout(() => this.showEmoji(), 500);
+        }
+
+        // Stop walking after 1 second
+        setTimeout(() => {
+            char.classList.remove('walking');
+            this.character.moving = false;
+        }, 1000);
+    }
+
+    showEmoji() {
+        const bubble = document.querySelector('.emoji-bubble');
+        const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+
+        bubble.textContent = emoji;
+        bubble.classList.add('show');
+
+        // Hide after 2 seconds
+        setTimeout(() => {
+            bubble.classList.remove('show');
+        }, 2000);
     }
     plant(name,pid){
         const c=CROPS[name];
@@ -594,8 +810,18 @@ class Game{
         this.gold-=c.price;
         p.crop={name:c.name,icon:c.icon,days:c.days,yield:c.yield,sell:c.sell,planted:new Date(this.date),age:0,water:100,fert:0};
         this.log('✅ Planted '+c.name);
+        this.showEmojiImmediate('🌱');
         this.render();
         closeModal();
+    }
+
+    showEmojiImmediate(emoji) {
+        const bubble = document.querySelector('.emoji-bubble');
+        bubble.textContent = emoji;
+        bubble.classList.add('show');
+        setTimeout(() => {
+            bubble.classList.remove('show');
+        }, 2000);
     }
     harvest(pid){
         const p=this.plots[pid];
@@ -606,14 +832,15 @@ class Game{
         this.harvested[c.name]=(this.harvested[c.name]||0)+amt;
         this.gold+=val;
         this.log('🌾 Harvested '+amt+' '+c.name+' (+'+val+'g)');
+        this.showEmojiImmediate('💰');
         p.crop=null;
         this.render();
     }
     water(pid){const p=this.plots[pid];if(p.crop)p.crop.water=100;}
     fert(pid){const p=this.plots[pid];if(p.crop&&this.gold>=20){this.gold-=20;p.crop.fert=100;}}
-    waterAll(){this.plots.forEach((_,i)=>this.water(i));this.log('💧 Watered all');this.render();}
-    fertAll(){const c=this.plots.filter(p=>p.crop).length*20;if(this.gold<c)return alert('Need '+c+'g!');this.plots.forEach((_,i)=>this.fert(i));this.log('🌱 Fertilized all');this.render();}
-    harvestAll(){let n=0;this.plots.forEach((_,i)=>{const p=this.plots[i];if(p.crop&&p.crop.age>=p.crop.days){this.harvest(i);n++;}});if(n)this.log('🎉 Harvested '+n+' plots');}
+    waterAll(){this.plots.forEach((_,i)=>this.water(i));this.log('💧 Watered all');this.showEmojiImmediate('💦');this.render();}
+    fertAll(){const c=this.plots.filter(p=>p.crop).length*20;if(this.gold<c)return alert('Need '+c+'g!');this.plots.forEach((_,i)=>this.fert(i));this.log('🌱 Fertilized all');this.showEmojiImmediate('🌱');this.render();}
+    harvestAll(){let n=0;this.plots.forEach((_,i)=>{const p=this.plots[i];if(p.crop&&p.crop.age>=p.crop.days){this.harvest(i);n++;}});if(n){this.log('🎉 Harvested '+n+' plots');this.showEmojiImmediate('🎉');}}
     nextDay(){
         this.date=new Date(this.date.getTime()+86400000);
         this.day++;
