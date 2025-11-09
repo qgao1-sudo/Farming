@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloria's Magic Farm - Kairosoft Style</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #87CEEB;
+            overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        /* Sky with clouds */
+        #sky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E2FF 100%);
+            z-index: -1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.8;
+            animation: float 30s infinite linear;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+        }
+
+        .cloud1 { width: 80px; height: 30px; top: 30px; left: -100px; }
+        .cloud1::before { width: 40px; height: 40px; top: -15px; left: 20px; }
+        .cloud1::after { width: 50px; height: 35px; top: -10px; right: 10px; }
+
+        .cloud2 { width: 100px; height: 35px; top: 80px; left: -150px; animation-delay: -15s; }
+        .cloud2::before { width: 50px; height: 45px; top: -18px; left: 25px; }
+        .cloud2::after { width: 60px; height: 40px; top: -12px; right: 15px; }
+
+        @keyframes float {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        /* Main container */
+        #game {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Pixel art header */
+        #header {
+            background: linear-gradient(to bottom, #FF6B9D 0%, #FFA07A 100%);
+            border: 4px solid #333;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        #header h1 {
+            color: white;
+            text-shadow: 3px 3px 0 #333, -1px -1px 0 #FFD700;
+            font-size: 28px;
+            letter-spacing: 2px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Main game area */
+        #main-area {
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 10px;
+        }
+
+        /* Panels */
+        .panel {
+            background: #FFF8DC;
+            border: 4px solid #8B4513;
+            padding: 10px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+        }
+
+        .panel-title {
+            background: #FF6347;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            border: 2px solid #333;
+            margin: -10px -10px 10px -10px;
+            text-shadow: 1px 1px 0 #333;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 2px dotted #DEB887;
+            font-size: 11px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #FF6347;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #32CD32;
+            border: 3px solid #333;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #000;
+            text-shadow: 1px 1px 0 #333;
+        }
+
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        .btn-red { background: #FF4444; }
+        .btn-blue { background: #4169E1; }
+        .btn-yellow { background: #FFD700; color: #333; }
+
+        /* Farm area with pixel grass */
+        #farm-container {
+            background: #7CFC00;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+            padding: 20px;
+            position: relative;
+            min-height: 500px;
+        }
+
+        /* Farmhouse */
+        #farmhouse {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+        }
+
+        .house-roof {
+            width: 0;
+            height: 0;
+            border-left: 45px solid transparent;
+            border-right: 45px solid transparent;
+            border-bottom: 35px solid #DC143C;
+            position: relative;
+            left: -5px;
+            filter: drop-shadow(2px 2px 0 #333);
+        }
+
+        .house-body {
+            width: 80px;
+            height: 45px;
+            background: #DEB887;
+            border: 3px solid #333;
+            position: relative;
+        }
+
+        .house-door {
+            width: 20px;
+            height: 28px;
+            background: #8B4513;
+            border: 2px solid #333;
+            position: absolute;
+            bottom: 0;
+            left: 30px;
+        }
+
+        .house-window {
+            width: 15px;
+            height: 15px;
+            background: #87CEEB;
+            border: 2px solid #333;
+            position: absolute;
+            top: 8px;
+        }
+
+        .house-window:first-of-type { left: 8px; }
+        .house-window:last-of-type { right: 8px; }
+
+        /* Farm grid */
+        #farm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 450px;
+            margin: 0 auto;
+            padding-top: 20px;
+        }
+
+        /* Plot - pixel art soil */
+        .plot {
+            width: 140px;
+            height: 140px;
+            background: #8B4513;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px),
+                repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px);
+            border: 4px solid #654321;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.4), inset 2px 2px 0 rgba(255,255,255,0.1);
+        }
+
+        .plot:hover {
+            transform: scale(1.05);
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.4), inset 2px 2px 0 rgba(255,255,255,0.1);
+        }
+
+        .plot.growing {
+            background: #6B8E23;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px),
+                repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px);
+        }
+
+        .plot.ready {
+            background: #FFD700;
+            animation: glow 1s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px #FFD700, 4px 4px 0 rgba(0,0,0,0.4); }
+            50% { box-shadow: 0 0 20px #FFD700, 4px 4px 0 rgba(0,0,0,0.4); }
+        }
+
+        .plot-id {
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .crop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .crop-icon {
+            font-size: 50px;
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3));
+            animation: grow 0.5s;
+        }
+
+        @keyframes grow {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .crop-name {
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            margin-top: 5px;
+        }
+
+        .crop-status {
+            font-size: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin-top: 3px;
+        }
+
+        .empty-plot {
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            line-height: 140px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* Shop */
+        .shop-item {
+            background: white;
+            border: 3px solid #333;
+            padding: 8px;
+            margin: 5px 0;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        .shop-item:hover {
+            background: #FFFACD;
+            transform: translateX(3px);
+        }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .shop-name {
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .shop-icon {
+            font-size: 20px;
+        }
+
+        .shop-info {
+            font-size: 9px;
+            color: #666;
+        }
+
+        .shop-price {
+            background: #FF4444;
+            color: white;
+            padding: 3px 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 9px;
+            margin-top: 5px;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: white;
+            border: 3px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #32CD32,
+                #32CD32 10px,
+                #228B22 10px,
+                #228B22 20px
+            );
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* Log */
+        #log {
+            max-height: 100px;
+            overflow-y: auto;
+            background: #FFFAF0;
+            border: 3px solid #8B4513;
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px dotted #DEB887;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFF8DC;
+            border: 5px solid #333;
+            padding: 20px;
+            max-width: 400px;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            background: #FF6347;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid #333;
+            margin: -20px -20px 15px -20px;
+        }
+
+        .close {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+        }
+
+        @media (max-width: 1000px) {
+            #main-area { grid-template-columns: 1fr; }
+            .plot { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sky">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+    </div>
+
+    <div id="game">
+        <div id="header">
+            <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
+        </div>
+
+        <div id="main-area">
+            <!-- Left Panel -->
+            <div>
+                <div class="panel">
+                    <div class="panel-title">🧑‍🌾 FARMER</div>
+                    <div class="stat-line">
+                        <span>💰 Gold:</span>
+                        <span class="stat-value" id="gold">1000</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>💎 Gems:</span>
+                        <span class="stat-value" id="gems">10</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>⭐ Fame:</span>
+                        <span class="stat-value" id="fame">50</span>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <div class="panel-title">📅 CALENDAR</div>
+                    <div class="stat-line">
+                        <span>Date:</span>
+                        <span id="date">May 1</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>Day:</span>
+                        <span id="day">1</span>
+                    </div>
+                    <button class="btn btn-red" onclick="game.nextDay()">⏭️ NEXT DAY</button>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <div class="panel-title">🎯 GOAL</div>
+                    <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
+                        Harvest 350 Wheat
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress" style="width:0%">0%</div>
+                        </div>
+                        <div style="text-align:center;margin-top:5px;font-size:11px;">
+                            <span id="current">0</span> / <span id="total">350</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <button class="btn btn-blue" onclick="game.waterAll()">💧 WATER</button>
+                    <button class="btn btn-blue" onclick="game.fertAll()">🌱 FERTILIZE</button>
+                    <button class="btn btn-yellow" onclick="game.harvestAll()">🌾 HARVEST</button>
+                </div>
+            </div>
+
+            <!-- Farm Area -->
+            <div class="panel" id="farm-container">
+                <div id="farmhouse">
+                    <div class="house-roof"></div>
+                    <div class="house-body">
+                        <div class="house-window"></div>
+                        <div class="house-window"></div>
+                        <div class="house-door"></div>
+                    </div>
+                </div>
+                <div id="farm-grid"></div>
+            </div>
+
+            <!-- Right Panel - Shop -->
+            <div>
+                <div class="panel">
+                    <div class="panel-title">🏪 SEED SHOP</div>
+                    <div id="shop" style="max-height:400px;overflow-y:auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <span id="modal-title">PLOT</span>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+const CROPS={Wheat:{name:"Wheat",icon:"🌾",price:10,days:2,yield:30,sell:5},Carrot:{name:"Carrot",icon:"🥕",price:15,days:3,yield:20,sell:8},Tomato:{name:"Tomato",icon:"🍅",price:30,days:4,yield:10,sell:15},Strawberry:{name:"Strawberry",icon:"🍓",price:50,days:5,yield:15,sell:20},Sunflower:{name:"Sunflower",icon:"🌻",price:40,days:5,yield:10,sell:18},Pumpkin:{name:"Pumpkin",icon:"🎃",price:200,days:8,yield:1,sell:300}};
+
+class Game{
+    constructor(){
+        this.gold=1000;this.gems=10;this.fame=50;
+        this.date=new Date(2024,4,1);this.day=1;
+        this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null}));
+        this.target={type:"harvest",crop:"Wheat",val:350};
+        this.harvested={};
+        this.init();
+    }
+    init(){
+        const g=document.getElementById('farm-grid');
+        for(let i=0;i<9;i++){
+            const p=document.createElement('div');
+            p.className='plot';
+            p.id='plot-'+i;
+            p.innerHTML='<div class="plot-id">#'+i+'</div><div class="empty-plot">CLICK<br>TO PLANT</div>';
+            p.onclick=()=>this.showModal(i);
+            g.appendChild(p);
+        }
+        this.renderShop();
+        this.render();
+    }
+    plant(name,pid){
+        const c=CROPS[name];
+        if(this.gold<c.price)return alert('Not enough gold!');
+        const p=this.plots[pid];
+        if(p.crop)return alert('Plot occupied!');
+        this.gold-=c.price;
+        p.crop={name:c.name,icon:c.icon,days:c.days,yield:c.yield,sell:c.sell,planted:new Date(this.date),age:0,water:100,fert:0};
+        this.log('✅ Planted '+c.name);
+        this.render();
+        closeModal();
+    }
+    harvest(pid){
+        const p=this.plots[pid];
+        if(!p.crop||p.crop.age<p.crop.days)return;
+        const c=p.crop;
+        const amt=Math.floor(c.yield*(c.water>=50?1:0.7)*(c.fert>=50?1.2:1));
+        const val=amt*c.sell;
+        this.harvested[c.name]=(this.harvested[c.name]||0)+amt;
+        this.gold+=val;
+        this.log('🌾 Harvested '+amt+' '+c.name+' (+'+val+'g)');
+        p.crop=null;
+        this.render();
+    }
+    water(pid){const p=this.plots[pid];if(p.crop)p.crop.water=100;}
+    fert(pid){const p=this.plots[pid];if(p.crop&&this.gold>=20){this.gold-=20;p.crop.fert=100;}}
+    waterAll(){this.plots.forEach((_,i)=>this.water(i));this.log('💧 Watered all');this.render();}
+    fertAll(){const c=this.plots.filter(p=>p.crop).length*20;if(this.gold<c)return alert('Need '+c+'g!');this.plots.forEach((_,i)=>this.fert(i));this.log('🌱 Fertilized all');this.render();}
+    harvestAll(){let n=0;this.plots.forEach((_,i)=>{const p=this.plots[i];if(p.crop&&p.crop.age>=p.crop.days){this.harvest(i);n++;}});if(n)this.log('🎉 Harvested '+n+' plots');}
+    nextDay(){
+        this.date=new Date(this.date.getTime()+86400000);
+        this.day++;
+        this.plots.forEach(p=>{if(p.crop){p.crop.age++;p.crop.water=Math.max(0,p.crop.water-20);}});
+        this.log('📅 Day '+this.day);
+        const t=new Date(this.date.getTime()+86400000);
+        if(t.getDate()===1){
+            const h=this.harvested[this.target.crop]||0;
+            if(h>=this.target.val){this.gold+=this.target.val*10;this.gems+=5;alert('🎉 GOAL COMPLETE!\n+'+this.target.val*10+'g +5💎');}
+            else{this.gold=Math.max(0,this.gold-500);alert('💔 FAILED\n-500g');}
+            this.harvested={};
+        }
+        this.render();
+    }
+    render(){
+        document.getElementById('gold').textContent=this.gold;
+        document.getElementById('gems').textContent=this.gems;
+        document.getElementById('fame').textContent=this.fame;
+        const m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        document.getElementById('date').textContent=m[this.date.getMonth()]+' '+this.date.getDate();
+        document.getElementById('day').textContent=this.day;
+        const h=this.harvested[this.target.crop]||0;
+        const pct=Math.min(100,(h/this.target.val)*100);
+        document.getElementById('current').textContent=h;
+        document.getElementById('total').textContent=this.target.val;
+        const pb=document.getElementById('progress');
+        pb.style.width=pct+'%';
+        pb.textContent=Math.floor(pct)+'%';
+        this.plots.forEach((p,i)=>{
+            const d=document.getElementById('plot-'+i);
+            if(p.crop){
+                const rdy=p.crop.age>=p.crop.days;
+                d.className='plot '+(rdy?'ready':'growing');
+                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="crop"><div class="crop-icon">'+p.crop.icon+'</div><div class="crop-name">'+p.crop.name+'</div><div class="crop-status">'+(rdy?'✅ READY':'⏳ '+(p.crop.days-p.crop.age)+'d')+'</div></div>';
+            }else{
+                d.className='plot';
+                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="empty-plot">CLICK<br>TO PLANT</div>';
+            }
+        });
+    }
+    renderShop(){
+        const s=document.getElementById('shop');
+        for(const[n,c]of Object.entries(CROPS)){
+            const d=document.createElement('div');
+            d.className='shop-item';
+            const pr=c.yield*c.sell-c.price;
+            d.innerHTML='<div class="shop-header"><span class="shop-name">'+n+'</span><span class="shop-icon">'+c.icon+'</span></div><div class="shop-info">📅'+c.days+'d | 💰'+pr+'g profit</div><div class="shop-price">💰 '+c.price+' GOLD</div>';
+            d.onclick=()=>{const e=this.plots.find(p=>!p.crop);if(!e)return alert('No plots!');this.plant(n,e.id);};
+            s.appendChild(d);
+        }
+    }
+    showModal(pid){
+        const p=this.plots[pid];
+        const m=document.getElementById('modal');
+        const b=document.getElementById('modal-body');
+        const t=document.getElementById('modal-title');
+        t.textContent='PLOT #'+pid;
+        if(p.crop){
+            const rdy=p.crop.age>=p.crop.days;
+            b.innerHTML='<div style="text-align:center;margin:20px 0;"><div style="font-size:60px;">'+p.crop.icon+'</div><h3>'+p.crop.name+'</h3></div>'
+            +'<div class="stat-line"><span>Status:</span><span>'+(rdy?'✅ READY':'⏳ '+(p.crop.days-p.crop.age)+' days')+'</span></div>'
+            +'<div class="stat-line"><span>Water:</span><span>'+Math.floor(p.crop.water)+'%</span></div>'
+            +'<div class="stat-line"><span>Fertilizer:</span><span>'+Math.floor(p.crop.fert)+'%</span></div>'
+            +'<div style="margin-top:15px;">'+(rdy?'<button class="btn btn-yellow" onclick="game.harvest('+pid+');closeModal();">🌾 HARVEST</button>':'<button class="btn btn-blue" onclick="game.water('+pid+');closeModal();">💧 WATER</button><button class="btn btn-blue" onclick="game.fert('+pid+');closeModal();">🌱 FERTILIZE (20g)</button>')+'</div>';
+        }else{
+            b.innerHTML='<p style="text-align:center;margin:20px 0;">Choose a crop to plant:</p><div id="crops"></div>';
+            const cr=document.getElementById('crops');
+            for(const[n,c]of Object.entries(CROPS)){
+                const bt=document.createElement('button');
+                bt.className='btn';
+                bt.textContent=c.icon+' '+n+' ('+c.price+'g)';
+                bt.onclick=()=>this.plant(n,pid);
+                cr.appendChild(bt);
+            }
+        }
+        m.style.display='block';
+    }
+    log(msg){
+        const l=document.getElementById('log');
+        const e=document.createElement('div');
+        e.className='log-entry';
+        e.textContent=msg;
+        l.insertBefore(e,l.firstChild);
+        while(l.children.length>10)l.removeChild(l.lastChild);
+    }
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';}
+window.onclick=e=>{if(e.target.id==='modal')closeModal();};
+
+let game;
+window.onload=()=>{game=new Game();game.log('🎮 Welcome to Gloria\'s Magic Farm!');game.log('💡 Plant crops and reach your goals!');};
+    </script>
+</body>
+</html>
