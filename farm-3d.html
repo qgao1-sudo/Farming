@@ -205,14 +205,16 @@
     </div>
 
     <div id="controls">
-        🖱️ Click plots to plant<br>
+        🖱️ Click plots to plant/harvest<br>
         🎮 WASD to move camera<br>
-        📷 Mouse drag to rotate
+        📷 Drag mouse to rotate view<br>
+        🔍 Scroll to zoom in/out
     </div>
 
     <div id="message"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
     <script>
 // ==================== GAME DATA ====================
 const CROPS = {
@@ -283,6 +285,14 @@ class FarmGame {
         // Raycaster for clicking
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+
+        // OrbitControls for camera
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        this.controls.minDistance = 15;
+        this.controls.maxDistance = 60;
+        this.controls.maxPolarAngle = Math.PI / 2.2;
 
         // Event listeners
         window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -898,18 +908,22 @@ class FarmGame {
         switch(event.key) {
             case 'w': case 'W':
                 this.camera.position.z -= speed;
+                this.controls.target.z -= speed;
                 break;
             case 's': case 'S':
                 this.camera.position.z += speed;
+                this.controls.target.z += speed;
                 break;
             case 'a': case 'A':
                 this.camera.position.x -= speed;
+                this.controls.target.x -= speed;
                 break;
             case 'd': case 'D':
                 this.camera.position.x += speed;
+                this.controls.target.x += speed;
                 break;
         }
-        this.camera.lookAt(0, 0, 0);
+        this.controls.update();
     }
 
     onWindowResize() {
@@ -924,9 +938,10 @@ class FarmGame {
 
         this.updateCharacter();
 
-        // Rotate camera slowly
-        this.camera.position.x = Math.sin(Date.now() * 0.0001) * 35;
-        this.camera.lookAt(0, 0, 0);
+        // Update controls
+        if(this.controls) {
+            this.controls.update();
+        }
 
         this.renderer.render(this.scene, this.camera);
     }
