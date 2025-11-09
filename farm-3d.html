@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloria's Magic Farm 3D - Kairosoft Style</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            background: #87CEEB;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .ui-panel {
+            position: absolute;
+            background: rgba(255, 248, 220, 0.95);
+            border: 4px solid #333;
+            padding: 15px;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.3);
+            pointer-events: auto;
+            font-size: 12px;
+        }
+        .panel-title {
+            background: #FF6347;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid #333;
+            margin: -15px -15px 10px -15px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        #top-left { top: 10px; left: 10px; width: 250px; }
+        #top-right { top: 10px; right: 10px; width: 250px; }
+        #bottom-bar { bottom: 10px; left: 50%; transform: translateX(-50%); width: 800px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 2px dotted #DEB887;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #FF6347;
+        }
+        .btn {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #32CD32;
+            border: 3px solid #333;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #000;
+            font-size: 11px;
+        }
+        .btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #000; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+        .btn-red { background: #FF4444; }
+        .btn-blue { background: #4169E1; }
+        .btn-yellow { background: #FFD700; color: #333; }
+
+        /* Season Progress Bar */
+        #season-bar {
+            height: 40px;
+            background: white;
+            border: 4px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+        #season-progress {
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #32CD32,
+                #32CD32 10px,
+                #228B22 10px,
+                #228B22 20px
+            );
+            transition: width 0.1s linear;
+            position: relative;
+        }
+        #season-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 1;
+        }
+
+        /* Control hints */
+        #controls {
+            position: fixed;
+            bottom: 100px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+        /* Shop */
+        .shop-item {
+            background: white;
+            border: 3px solid #333;
+            padding: 8px;
+            margin: 5px 0;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .shop-item:hover {
+            background: #FFFACD;
+        }
+        .shop-icon {
+            font-size: 20px;
+        }
+
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px 50px;
+            border: 5px solid #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="ui-overlay">
+        <!-- Top Left Panel - Stats -->
+        <div class="ui-panel" id="top-left">
+            <div class="panel-title">🧑‍🌾 FARMER STATUS</div>
+            <div class="stat-row">
+                <span>💰 Gold:</span>
+                <span class="stat-value" id="gold">1000</span>
+            </div>
+            <div class="stat-row">
+                <span>💎 Gems:</span>
+                <span class="stat-value" id="gems">10</span>
+            </div>
+            <div class="stat-row">
+                <span>🌾 Harvested:</span>
+                <span class="stat-value" id="harvested">0</span>
+            </div>
+            <div class="stat-row">
+                <span>⭐ Goal:</span>
+                <span class="stat-value" id="goal-progress">0/350</span>
+            </div>
+        </div>
+
+        <!-- Top Right Panel - Shop -->
+        <div class="ui-panel" id="top-right">
+            <div class="panel-title">🏪 SEED SHOP</div>
+            <div id="shop-items"></div>
+        </div>
+
+        <!-- Bottom Bar - Season Timer -->
+        <div class="ui-panel" id="bottom-bar">
+            <div class="panel-title">🌸 SEASON PROGRESS</div>
+            <div id="season-bar">
+                <div id="season-progress" style="width:0%"></div>
+                <div id="season-text">5:00</div>
+            </div>
+            <div style="margin-top:10px; display: flex; gap: 10px;">
+                <button class="btn btn-blue" onclick="game.waterAll()">💧 WATER ALL</button>
+                <button class="btn btn-blue" onclick="game.fertilizeAll()">🌱 FERTILIZE ALL</button>
+                <button class="btn btn-yellow" onclick="game.harvestAll()">🌾 HARVEST ALL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        🖱️ Click plots to plant<br>
+        🎮 WASD to move camera<br>
+        📷 Mouse drag to rotate
+    </div>
+
+    <div id="message"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+// ==================== GAME DATA ====================
+const CROPS = {
+    Wheat: { name: "Wheat", icon: "🌾", price: 10, growTime: 20, stages: 3, yield: 30, sell: 5, color: 0xFFD700 },
+    Carrot: { name: "Carrot", icon: "🥕", price: 15, growTime: 30, stages: 3, yield: 20, sell: 8, color: 0xFF8C00 },
+    Tomato: { name: "Tomato", icon: "🍅", price: 30, growTime: 40, stages: 4, yield: 10, sell: 15, color: 0xFF4500 },
+    Corn: { name: "Corn", icon: "🌽", price: 25, growTime: 35, stages: 4, yield: 15, sell: 12, color: 0xFFFF00 }
+};
+
+const EMOJIS = ["😊", "🤔", "😴", "💪", "❤️", "💰", "🌾", "💦"];
+
+// ==================== MAIN GAME CLASS ====================
+class FarmGame {
+    constructor() {
+        this.gold = 1000;
+        this.gems = 10;
+        this.totalHarvested = 0;
+        this.seasonGoal = 350;
+        this.seasonTime = 300; // 5 minutes in seconds
+        this.currentTime = 0;
+
+        this.plots = [];
+        this.character = null;
+        this.selectedPlot = null;
+
+        this.initThreeJS();
+        this.createWorld();
+        this.createCharacter();
+        this.createUI();
+        this.animate();
+        this.startSeasonTimer();
+    }
+
+    // ==================== THREE.JS SETUP ====================
+    initThreeJS() {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x87CEEB);
+        this.scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
+
+        // Camera
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 25, 35);
+        this.camera.lookAt(0, 0, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffee, 0.8);
+        sunLight.position.set(20, 30, 20);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.far = 100;
+        sunLight.shadow.camera.left = -40;
+        sunLight.shadow.camera.right = 40;
+        sunLight.shadow.camera.top = 40;
+        sunLight.shadow.camera.bottom = -40;
+        this.scene.add(sunLight);
+
+        // Raycaster for clicking
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
+        // Event listeners
+        window.addEventListener('resize', () => this.onWindowResize(), false);
+        window.addEventListener('click', (e) => this.onMouseClick(e), false);
+        window.addEventListener('keydown', (e) => this.onKeyDown(e), false);
+    }
+
+    // ==================== WORLD CREATION ====================
+    createWorld() {
+        // Ground - Grass
+        const groundGeo = new THREE.PlaneGeometry(100, 100);
+        const groundMat = new THREE.MeshLambertMaterial({
+            color: 0x7CFC00,
+            side: THREE.DoubleSide
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Add grass texture pattern
+        const grassPattern = new THREE.Group();
+        for(let i = 0; i < 200; i++) {
+            const blade = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.2, 0.5),
+                new THREE.MeshBasicMaterial({ color: 0x90EE90, side: THREE.DoubleSide })
+            );
+            blade.position.set(
+                (Math.random() - 0.5) * 100,
+                0.01,
+                (Math.random() - 0.5) * 100
+            );
+            blade.rotation.x = -Math.PI / 2;
+            grassPattern.add(blade);
+        }
+        this.scene.add(grassPattern);
+
+        // Create 3D Farmhouse
+        this.createFarmhouse();
+
+        // Create Farm Plots (3x3 grid)
+        const plotSize = 4;
+        const spacing = 5.5;
+        const startX = -spacing;
+        const startZ = -spacing;
+
+        for(let row = 0; row < 3; row++) {
+            for(let col = 0; col < 3; col++) {
+                const plot = this.createPlot(
+                    startX + col * spacing,
+                    startZ + row * spacing,
+                    plotSize
+                );
+                plot.gridPos = { row, col };
+                this.plots.push(plot);
+            }
+        }
+    }
+
+    createFarmhouse() {
+        const house = new THREE.Group();
+
+        // House body
+        const bodyGeo = new THREE.BoxGeometry(6, 4, 6);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xDEB887 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 2;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        house.add(body);
+
+        // Roof
+        const roofGeo = new THREE.ConeGeometry(5, 3, 4);
+        const roofMat = new THREE.MeshLambertMaterial({ color: 0xDC143C });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = 5.5;
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        house.add(roof);
+
+        // Door
+        const doorGeo = new THREE.BoxGeometry(1.2, 2, 0.2);
+        const doorMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const door = new THREE.Mesh(doorGeo, doorMat);
+        door.position.set(0, 1, 3.1);
+        house.add(door);
+
+        // Windows
+        const windowGeo = new THREE.BoxGeometry(0.8, 0.8, 0.2);
+        const windowMat = new THREE.MeshLambertMaterial({ color: 0x87CEEB });
+
+        const window1 = new THREE.Mesh(windowGeo, windowMat);
+        window1.position.set(-1.5, 2.5, 3.1);
+        house.add(window1);
+
+        const window2 = new THREE.Mesh(windowGeo, windowMat);
+        window2.position.set(1.5, 2.5, 3.1);
+        house.add(window2);
+
+        // Chimney
+        const chimneyGeo = new THREE.BoxGeometry(0.8, 2, 0.8);
+        const chimneyMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const chimney = new THREE.Mesh(chimneyGeo, chimneyMat);
+        chimney.position.set(2, 6, 1);
+        chimney.castShadow = true;
+        house.add(chimney);
+
+        house.position.set(12, 0, -12);
+        this.scene.add(house);
+    }
+
+    createPlot(x, z, size) {
+        const plot = new THREE.Group();
+
+        // Soil
+        const soilGeo = new THREE.BoxGeometry(size, 0.3, size);
+        const soilMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const soil = new THREE.Mesh(soilGeo, soilMat);
+        soil.receiveShadow = true;
+        soil.castShadow = true;
+        plot.add(soil);
+
+        // Border
+        const borderGeo = new THREE.BoxGeometry(size + 0.2, 0.4, size + 0.2);
+        const borderMat = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const border = new THREE.Mesh(borderGeo, borderMat);
+        border.position.y = -0.05;
+        plot.add(border);
+
+        plot.position.set(x, 0.15, z);
+        plot.userData = {
+            isEmpty: true,
+            crop: null,
+            growthStage: 0,
+            waterLevel: 100,
+            fertLevel: 0
+        };
+        plot.soil = soil;
+
+        this.scene.add(plot);
+        return plot;
+    }
+
+    // ==================== CHARACTER CREATION ====================
+    createCharacter() {
+        const char = new THREE.Group();
+
+        // Body (pixel style)
+        const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.6);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4169E1 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        char.add(body);
+
+        // Head
+        const headGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xFFDBAC });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 1.55;
+        head.castShadow = true;
+        char.add(head);
+
+        // Hat
+        const hatGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 8);
+        const hatMat = new THREE.MeshLambertMaterial({ color: 0xFFD700 });
+        const hat = new THREE.Mesh(hatGeo, hatMat);
+        hat.position.y = 2.1;
+        char.add(hat);
+
+        // Arms
+        const armGeo = new THREE.BoxGeometry(0.3, 0.8, 0.3);
+        const armMat = new THREE.MeshLambertMaterial({ color: 0xFFDBAC });
+
+        const leftArm = new THREE.Mesh(armGeo, armMat);
+        leftArm.position.set(-0.55, 0.8, 0);
+        char.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeo, armMat);
+        rightArm.position.set(0.55, 0.8, 0);
+        char.add(rightArm);
+
+        // Legs
+        const legGeo = new THREE.BoxGeometry(0.3, 0.7, 0.3);
+        const legMat = new THREE.MeshLambertMaterial({ color: 0x2F4F4F });
+
+        const leftLeg = new THREE.Mesh(legGeo, legMat);
+        leftLeg.position.set(-0.25, -0.35, 0);
+        char.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(legGeo, legMat);
+        rightLeg.position.set(0.25, -0.35, 0);
+        char.add(rightLeg);
+
+        // Emotion bubble (hidden initially)
+        const bubbleCanvas = document.createElement('canvas');
+        bubbleCanvas.width = 128;
+        bubbleCanvas.height = 128;
+        const ctx = bubbleCanvas.getContext('2d');
+
+        const bubbleTexture = new THREE.CanvasTexture(bubbleCanvas);
+        const bubbleMat = new THREE.SpriteMaterial({ map: bubbleTexture, transparent: true });
+        const bubble = new THREE.Sprite(bubbleMat);
+        bubble.scale.set(1.5, 1.5, 1);
+        bubble.position.y = 3;
+        bubble.visible = false;
+        char.add(bubble);
+
+        char.bubble = bubble;
+        char.bubbleCanvas = bubbleCanvas;
+        char.userData = {
+            targetPos: new THREE.Vector3(0, 0, 5),
+            isMoving: false,
+            currentEmotion: null,
+            workTimer: 0
+        };
+
+        char.position.set(0, 0, 5);
+        this.scene.add(char);
+        this.character = char;
+
+        // Start random movement
+        this.moveCharacterRandomly();
+    }
+
+    showEmoji(emoji) {
+        const char = this.character;
+        const canvas = char.bubbleCanvas;
+        const ctx = canvas.getContext('2d');
+
+        // Clear canvas
+        ctx.clearRect(0, 0, 128, 128);
+
+        // Draw bubble
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(64, 64, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw emoji
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, 64, 64);
+
+        char.bubble.material.map.needsUpdate = true;
+        char.bubble.visible = true;
+
+        setTimeout(() => {
+            char.bubble.visible = false;
+        }, 2000);
+    }
+
+    moveCharacterRandomly() {
+        setInterval(() => {
+            if(this.character && !this.character.userData.isMoving) {
+                // Pick random plot to walk to
+                const plot = this.plots[Math.floor(Math.random() * this.plots.length)];
+                this.character.userData.targetPos.copy(plot.position);
+                this.character.userData.targetPos.y = 0;
+                this.character.userData.isMoving = true;
+
+                // Random emoji
+                const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                this.showEmoji(emoji);
+            }
+        }, 5000);
+    }
+
+    updateCharacter() {
+        if(!this.character) return;
+
+        const char = this.character;
+        const data = char.userData;
+
+        if(data.isMoving) {
+            const speed = 0.05;
+            const direction = new THREE.Vector3()
+                .subVectors(data.targetPos, char.position)
+                .normalize();
+
+            char.position.add(direction.multiplyScalar(speed));
+
+            // Rotate to face direction
+            char.lookAt(data.targetPos);
+
+            // Bob animation
+            char.position.y = Math.abs(Math.sin(Date.now() * 0.01)) * 0.1;
+
+            // Check if reached target
+            if(char.position.distanceTo(data.targetPos) < 0.5) {
+                data.isMoving = false;
+                char.position.y = 0;
+            }
+        }
+    }
+
+    // ==================== PLANT GROWTH ====================
+    plantCrop(plot, cropName) {
+        const cropData = CROPS[cropName];
+        if(!cropData) return;
+
+        if(this.gold < cropData.price) {
+            this.showMessage("Not enough gold!");
+            return;
+        }
+
+        if(!plot.userData.isEmpty) {
+            this.showMessage("Plot already planted!");
+            return;
+        }
+
+        this.gold -= cropData.price;
+        this.updateUI();
+
+        // Plant seed
+        plot.userData.isEmpty = false;
+        plot.userData.crop = cropName;
+        plot.userData.growthStage = 0;
+        plot.userData.plantTime = Date.now();
+        plot.userData.waterLevel = 100;
+        plot.userData.fertLevel = 0;
+
+        // Change soil color
+        plot.soil.material.color.setHex(0x6B8E23);
+
+        // Show emoji
+        this.showEmoji("🌱");
+
+        // Start growth
+        this.growPlant(plot);
+    }
+
+    growPlant(plot) {
+        const cropData = CROPS[plot.userData.crop];
+        if(!cropData) return;
+
+        const growthInterval = (cropData.growTime * 1000) / cropData.stages;
+
+        const growTimer = setInterval(() => {
+            if(plot.userData.isEmpty || !plot.userData.crop) {
+                clearInterval(growTimer);
+                return;
+            }
+
+            plot.userData.growthStage++;
+
+            // Remove old plant
+            const oldPlant = plot.children.find(c => c.userData.isPlant);
+            if(oldPlant) plot.remove(oldPlant);
+
+            // Add new stage
+            const stage = plot.userData.growthStage;
+            const maxStage = cropData.stages;
+
+            if(stage <= maxStage) {
+                const plant = this.createPlant(cropData, stage, maxStage);
+                plant.userData.isPlant = true;
+                plot.add(plant);
+            }
+
+            if(stage >= maxStage) {
+                clearInterval(growTimer);
+                plot.userData.isReady = true;
+                // Add glow effect
+                const glowMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+                plot.soil.material = glowMat;
+                this.showEmoji("✨");
+            }
+
+            // Decrease water
+            plot.userData.waterLevel = Math.max(0, plot.userData.waterLevel - 20);
+        }, growthInterval);
+    }
+
+    createPlant(cropData, stage, maxStage) {
+        const plant = new THREE.Group();
+        const progress = stage / maxStage;
+        const height = 0.5 + progress * 1.5;
+
+        // Stem
+        const stemGeo = new THREE.CylinderGeometry(0.05, 0.08, height, 8);
+        const stemMat = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+        const stem = new THREE.Mesh(stemGeo, stemMat);
+        stem.position.y = height / 2 + 0.15;
+        stem.castShadow = true;
+        plant.add(stem);
+
+        // Leaves
+        const leafCount = Math.min(3, Math.floor(progress * 4));
+        for(let i = 0; i < leafCount; i++) {
+            const leafGeo = new THREE.BoxGeometry(0.3, 0.05, 0.2);
+            const leafMat = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+            const leaf = new THREE.Mesh(leafGeo, leafMat);
+            const angle = (i / leafCount) * Math.PI * 2;
+            leaf.position.set(
+                Math.cos(angle) * 0.2,
+                0.3 + i * 0.2,
+                Math.sin(angle) * 0.2
+            );
+            leaf.rotation.z = angle;
+            plant.add(leaf);
+        }
+
+        // Fruit/Crop (at final stage)
+        if(stage === maxStage) {
+            const fruitGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const fruitMat = new THREE.MeshLambertMaterial({ color: cropData.color });
+            const fruit = new THREE.Mesh(fruitGeo, fruitMat);
+            fruit.position.y = height + 0.3;
+            fruit.castShadow = true;
+            plant.add(fruit);
+        }
+
+        return plant;
+    }
+
+    harvestPlot(plot) {
+        if(plot.userData.isEmpty || !plot.userData.isReady) {
+            this.showMessage("Crop not ready!");
+            return;
+        }
+
+        const cropData = CROPS[plot.userData.crop];
+        const amount = Math.floor(cropData.yield * (plot.userData.waterLevel >= 50 ? 1 : 0.7));
+        const value = amount * cropData.sell;
+
+        this.gold += value;
+        this.totalHarvested += amount;
+        this.updateUI();
+
+        // Remove plant
+        const plant = plot.children.find(c => c.userData.isPlant);
+        if(plant) plot.remove(plant);
+
+        // Reset plot
+        plot.userData.isEmpty = true;
+        plot.userData.crop = null;
+        plot.userData.growthStage = 0;
+        plot.userData.isReady = false;
+        plot.soil.material = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+
+        this.showEmoji("💰");
+        this.showMessage(`+${value} gold!`);
+    }
+
+    // ==================== ACTIONS ====================
+    waterAll() {
+        this.plots.forEach(plot => {
+            if(!plot.userData.isEmpty) {
+                plot.userData.waterLevel = 100;
+            }
+        });
+        this.showEmoji("💧");
+        this.showMessage("All plots watered!");
+    }
+
+    fertilizeAll() {
+        const cost = this.plots.filter(p => !p.userData.isEmpty).length * 20;
+        if(this.gold < cost) {
+            this.showMessage("Not enough gold!");
+            return;
+        }
+        this.gold -= cost;
+        this.plots.forEach(plot => {
+            if(!plot.userData.isEmpty) {
+                plot.userData.fertLevel = 100;
+            }
+        });
+        this.updateUI();
+        this.showEmoji("🌱");
+        this.showMessage("All plots fertilized!");
+    }
+
+    harvestAll() {
+        let count = 0;
+        this.plots.forEach(plot => {
+            if(plot.userData.isReady) {
+                this.harvestPlot(plot);
+                count++;
+            }
+        });
+        if(count === 0) {
+            this.showMessage("No crops ready!");
+        }
+    }
+
+    // ==================== SEASON TIMER ====================
+    startSeasonTimer() {
+        setInterval(() => {
+            this.currentTime++;
+
+            const remaining = this.seasonTime - this.currentTime;
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+
+            document.getElementById('season-text').textContent =
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            const progress = (this.currentTime / this.seasonTime) * 100;
+            document.getElementById('season-progress').style.width = progress + '%';
+
+            // Season end
+            if(this.currentTime >= this.seasonTime) {
+                this.endSeason();
+            }
+        }, 1000);
+    }
+
+    endSeason() {
+        const reached = this.totalHarvested >= this.seasonGoal;
+
+        let msg = "🗓️ SEASON END!\n\n";
+        msg += `Goal: ${this.seasonGoal}\n`;
+        msg += `Harvested: ${this.totalHarvested}\n\n`;
+
+        if(reached) {
+            this.gold += 1000;
+            this.gems += 10;
+            msg += "🎉 SUCCESS!\n+1000 gold\n+10 gems";
+            this.showEmoji("🎉");
+        } else {
+            msg += "💔 FAILED!\nTry again!";
+            this.showEmoji("😢");
+        }
+
+        alert(msg);
+
+        // Reset
+        this.currentTime = 0;
+        this.totalHarvested = 0;
+        this.plots.forEach(plot => {
+            if(!plot.userData.isEmpty) {
+                const plant = plot.children.find(c => c.userData.isPlant);
+                if(plant) plot.remove(plant);
+                plot.userData.isEmpty = true;
+                plot.userData.crop = null;
+                plot.soil.material = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            }
+        });
+        this.updateUI();
+    }
+
+    // ==================== UI & INPUT ====================
+    createUI() {
+        this.updateUI();
+
+        // Create shop items
+        const shop = document.getElementById('shop-items');
+        for(const [name, crop] of Object.entries(CROPS)) {
+            const item = document.createElement('div');
+            item.className = 'shop-item';
+            item.innerHTML = `
+                <div>
+                    <div style="font-weight:bold;">${crop.icon} ${name}</div>
+                    <div style="font-size:10px;">⏱️${crop.growTime}s | 💰${crop.price}g</div>
+                </div>
+                <div class="shop-icon">${crop.icon}</div>
+            `;
+            item.onclick = () => {
+                this.selectedCrop = name;
+                this.showMessage(`Selected: ${name}\nClick a plot to plant!`);
+            };
+            shop.appendChild(item);
+        }
+    }
+
+    updateUI() {
+        document.getElementById('gold').textContent = this.gold;
+        document.getElementById('gems').textContent = this.gems;
+        document.getElementById('harvested').textContent = this.totalHarvested;
+        document.getElementById('goal-progress').textContent =
+            `${this.totalHarvested}/${this.seasonGoal}`;
+    }
+
+    showMessage(text) {
+        const msg = document.getElementById('message');
+        msg.textContent = text;
+        msg.style.display = 'block';
+        setTimeout(() => {
+            msg.style.display = 'none';
+        }, 2000);
+    }
+
+    onMouseClick(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(
+            this.plots.map(p => p.soil)
+        );
+
+        if(intersects.length > 0) {
+            const plot = intersects[0].object.parent;
+
+            if(this.selectedCrop && plot.userData.isEmpty) {
+                this.plantCrop(plot, this.selectedCrop);
+                this.selectedCrop = null;
+            } else if(plot.userData.isReady) {
+                this.harvestPlot(plot);
+            } else {
+                this.showMessage("Select a crop first!");
+            }
+        }
+    }
+
+    onKeyDown(event) {
+        const speed = 2;
+        switch(event.key) {
+            case 'w': case 'W':
+                this.camera.position.z -= speed;
+                break;
+            case 's': case 'S':
+                this.camera.position.z += speed;
+                break;
+            case 'a': case 'A':
+                this.camera.position.x -= speed;
+                break;
+            case 'd': case 'D':
+                this.camera.position.x += speed;
+                break;
+        }
+        this.camera.lookAt(0, 0, 0);
+    }
+
+    onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ==================== ANIMATION LOOP ====================
+    animate() {
+        requestAnimationFrame(() => this.animate());
+
+        this.updateCharacter();
+
+        // Rotate camera slowly
+        this.camera.position.x = Math.sin(Date.now() * 0.0001) * 35;
+        this.camera.lookAt(0, 0, 0);
+
+        this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// ==================== START GAME ====================
+let game;
+window.addEventListener('load', () => {
+    game = new FarmGame();
+});
+    </script>
+</body>
+</html>
