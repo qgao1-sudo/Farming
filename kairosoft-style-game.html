@@ -667,7 +667,17 @@
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
-                    <div class="panel-title">🎯 GOAL</div>
+                    <div class="panel-title">⏰ SEASON TIMER</div>
+                    <div style="text-align:center;padding:15px;font-size:24px;font-weight:bold;color:#FF6347;background:white;border:3px solid #333;margin-bottom:10px;">
+                        <span id="season-timer">3:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="season-progress-bar" style="width:0%;background:#FF6347;"></div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <div class="panel-title">🎯 SEASON GOAL</div>
                     <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
                         Harvest 350 Wheat
                     </div>
@@ -751,16 +761,63 @@ const CHARACTERS = [
     {name: 'Anna', gender: 'female', shirt: '#9370DB', hair: '#FFD700', skin: '#FFDAB9'}
 ];
 
+// Season goals - various types
+const SEASON_GOALS = [
+    {type: 'harvest_specific', crop: 'Wheat', amount: 100, reward_gold: 500, reward_gems: 5, desc: 'Harvest 100 Wheat'},
+    {type: 'harvest_specific', crop: 'Carrot', amount: 80, reward_gold: 600, reward_gems: 5, desc: 'Harvest 80 Carrots'},
+    {type: 'harvest_specific', crop: 'Tomato', amount: 50, reward_gold: 800, reward_gems: 8, desc: 'Harvest 50 Tomatoes'},
+    {type: 'harvest_specific', crop: 'Strawberry', amount: 60, reward_gold: 1000, reward_gems: 10, desc: 'Harvest 60 Strawberries'},
+    {type: 'harvest_mixed', crops: ['Wheat', 'Carrot', 'Corn'], amount: 120, reward_gold: 700, reward_gems: 7, desc: 'Harvest 120 Grains (Wheat/Carrot/Corn)'},
+    {type: 'harvest_mixed', crops: ['Tomato', 'Strawberry', 'Apple'], amount: 80, reward_gold: 1200, reward_gems: 12, desc: 'Harvest 80 Fruits (Tomato/Strawberry/Apple)'},
+    {type: 'earn_gold', amount: 1000, reward_gold: 500, reward_gems: 8, desc: 'Earn 1000 Gold this season'},
+    {type: 'plant_variety', amount: 5, reward_gold: 800, reward_gems: 10, desc: 'Plant 5 different crop types'},
+    {type: 'total_harvest', amount: 150, reward_gold: 800, reward_gems: 8, desc: 'Harvest 150 crops total'},
+    {type: 'harvest_expensive', crops: ['Watermelon', 'Pumpkin', 'Apple'], amount: 30, reward_gold: 1500, reward_gems: 15, desc: 'Harvest 30 Premium Crops'}
+];
+
+const SEASON_TIME = 180; // 3 minutes in seconds
+
 class Game{
     constructor(){
         this.gold=1000;this.gems=10;this.fame=50;
         this.date=new Date(2024,4,1);this.day=1;
         this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null,timer:null,remaining:0}));
-        this.target={type:"harvest",crop:"Wheat",val:350};
         this.harvested={};
+        this.plantedTypes=new Set();
+        this.seasonStartGold=1000;
+        this.seasonGoldEarned=0;
         this.characters=[];
+        this.seasonTime=SEASON_TIME;
+        this.seasonRemaining=SEASON_TIME;
+        this.currentGoal=this.selectRandomGoal();
         this.init();
     }
+    selectRandomGoal(){
+        const goal=SEASON_GOALS[Math.floor(Math.random()*SEASON_GOALS.length)];
+        return JSON.parse(JSON.stringify(goal)); // Deep copy
+    }
+
+    startSeasonTimer(){
+        this.seasonTimer=setInterval(()=>{
+            this.seasonRemaining--;
+            this.updateSeasonDisplay();
+            if(this.seasonRemaining<=0){
+                this.endSeason();
+            }
+        },1000);
+    }
+
+    updateSeasonDisplay(){
+        const minutes=Math.floor(this.seasonRemaining/60);
+        const seconds=this.seasonRemaining%60;
+        const timeStr=minutes+':'+(seconds<10?'0':'')+seconds;
+        document.getElementById('season-timer').textContent=timeStr;
+
+        const progress=(1-(this.seasonRemaining/this.seasonTime))*100;
+        const bar=document.getElementById('season-progress-bar');
+        if(bar)bar.style.width=progress+'%';
+    }
+
     init(){
         const g=document.getElementById('farm-grid');
         for(let i=0;i<9;i++){
@@ -775,6 +832,7 @@ class Game{
         this.createCharacters();
         this.render();
         this.startCharacterMovement();
+        this.startSeasonTimer();
     }
 
     createCharacters() {
@@ -950,6 +1008,9 @@ class Game{
         p.remaining = c.time;
         p.readyNotified = false;
 
+        // Track planted types for variety goal
+        this.plantedTypes.add(name);
+
         this.log('✅ Planted '+c.name);
 
         // Find a random character to show planting emoji
@@ -978,6 +1039,7 @@ class Game{
         const val=amt*c.sell;
         this.harvested[c.name]=(this.harvested[c.name]||0)+amt;
         this.gold+=val;
+        this.seasonGoldEarned+=val;
         this.log('🌾 Harvested '+amt+' '+c.name+' (+'+val+'g)');
 
         // Clear plot
@@ -1013,18 +1075,69 @@ class Game{
             this.log('🎉 Harvesting '+n+' plots');
         }
     }
+    getGoalProgress(){
+        const goal=this.currentGoal;
+        switch(goal.type){
+            case 'harvest_specific':
+                return this.harvested[goal.crop]||0;
+            case 'harvest_mixed':
+                return goal.crops.reduce((sum,crop)=>(sum+(this.harvested[crop]||0)),0);
+            case 'earn_gold':
+                return this.seasonGoldEarned;
+            case 'plant_variety':
+                return this.plantedTypes.size;
+            case 'total_harvest':
+                return Object.values(this.harvested).reduce((a,b)=>a+b,0);
+            case 'harvest_expensive':
+                return goal.crops.reduce((sum,crop)=>(sum+(this.harvested[crop]||0)),0);
+            default:
+                return 0;
+        }
+    }
+
+    endSeason(){
+        clearInterval(this.seasonTimer);
+        const progress=this.getGoalProgress();
+        const goal=this.currentGoal;
+        const success=progress>=goal.amount;
+
+        let msg='🗓️ SEASON END!\n\n';
+        msg+='Goal: '+goal.desc+'\n';
+        msg+='Progress: '+progress+'/'+goal.amount+'\n\n';
+
+        if(success){
+            this.gold+=goal.reward_gold;
+            this.gems+=goal.reward_gems;
+            msg+='🎉 SUCCESS!\n';
+            msg+='+'+goal.reward_gold+' gold\n';
+            msg+='+'+goal.reward_gems+' gems';
+            this.showEmoji(0,'🎉');
+            this.log('🎉 Season goal completed!');
+        }else{
+            msg+='💔 FAILED!\n';
+            msg+='Better luck next season!';
+            this.showEmoji(0,'😢');
+            this.log('💔 Season goal failed');
+        }
+
+        alert(msg);
+
+        // Reset for new season
+        this.harvested={};
+        this.plantedTypes=new Set();
+        this.seasonGoldEarned=0;
+        this.seasonStartGold=this.gold;
+        this.seasonRemaining=SEASON_TIME;
+        this.currentGoal=this.selectRandomGoal();
+
+        this.render();
+        this.startSeasonTimer();
+    }
+
     nextDay(){
         this.date=new Date(this.date.getTime()+86400000);
         this.day++;
-        this.plots.forEach(p=>{if(p.crop){p.crop.age++;p.crop.water=Math.max(0,p.crop.water-20);}});
         this.log('📅 Day '+this.day);
-        const t=new Date(this.date.getTime()+86400000);
-        if(t.getDate()===1){
-            const h=this.harvested[this.target.crop]||0;
-            if(h>=this.target.val){this.gold+=this.target.val*10;this.gems+=5;alert('🎉 GOAL COMPLETE!\n+'+this.target.val*10+'g +5💎');}
-            else{this.gold=Math.max(0,this.gold-500);alert('💔 FAILED\n-500g');}
-            this.harvested={};
-        }
         this.render();
     }
     render(){
@@ -1034,13 +1147,19 @@ class Game{
         const m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         document.getElementById('date').textContent=m[this.date.getMonth()]+' '+this.date.getDate();
         document.getElementById('day').textContent=this.day;
-        const h=this.harvested[this.target.crop]||0;
-        const pct=Math.min(100,(h/this.target.val)*100);
-        document.getElementById('current').textContent=h;
-        document.getElementById('total').textContent=this.target.val;
+
+        // Update goal display
+        const progress=this.getGoalProgress();
+        const goalAmount=this.currentGoal.amount;
+        const pct=Math.min(100,(progress/goalAmount)*100);
+
+        document.getElementById('goal-text').textContent=this.currentGoal.desc;
+        document.getElementById('current').textContent=progress;
+        document.getElementById('total').textContent=goalAmount;
         const pb=document.getElementById('progress');
         pb.style.width=pct+'%';
         pb.textContent=Math.floor(pct)+'%';
+
         this.plots.forEach((p,i)=>{
             const d=document.getElementById('plot-'+i);
             if(p.crop){
