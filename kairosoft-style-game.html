@@ -218,14 +218,12 @@
         .house-window:last-of-type { right: 8px; }
 
         /* Character - Pixel art farmer */
-        #character {
+        .character {
             position: absolute;
             width: 32px;
             height: 40px;
-            transition: all 1s ease-in-out;
+            transition: all 1.5s ease-in-out;
             z-index: 100;
-            left: 50%;
-            top: 50%;
         }
 
         .character-body {
@@ -250,7 +248,6 @@
         .char-hat {
             width: 16px;
             height: 6px;
-            background: #FFD700;
             border: 2px solid #333;
             position: absolute;
             top: -4px;
@@ -258,11 +255,21 @@
             border-radius: 2px 2px 0 0;
         }
 
+        /* Hair for female characters */
+        .char-hair {
+            width: 14px;
+            height: 8px;
+            border: 2px solid #333;
+            position: absolute;
+            top: -3px;
+            left: 9px;
+            border-radius: 50% 50% 0 0;
+        }
+
         /* Body */
         .char-torso {
             width: 16px;
             height: 12px;
-            background: #4169E1;
             border: 2px solid #333;
             position: absolute;
             top: 14px;
@@ -301,11 +308,11 @@
             50% { transform: translateY(-2px); }
         }
 
-        #character.walking .char-leg.left {
+        .character.walking .char-leg.left {
             animation: walk 0.4s infinite;
         }
 
-        #character.walking .char-leg.right {
+        .character.walking .char-leg.right {
             animation: walk 0.4s infinite;
             animation-delay: 0.2s;
         }
@@ -442,6 +449,28 @@
             padding: 2px 5px;
             border-radius: 3px;
             margin-top: 3px;
+        }
+
+        .timer {
+            font-size: 12px;
+            font-weight: bold;
+            background: #FF6347;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            margin-top: 5px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .timer.ready {
+            background: #32CD32;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .empty-plot {
@@ -670,19 +699,8 @@
                     </div>
                 </div>
 
-                <!-- Character -->
-                <div id="character">
-                    <div class="emoji-bubble"></div>
-                    <div class="character-body">
-                        <div class="char-hat"></div>
-                        <div class="char-head"></div>
-                        <div class="char-torso"></div>
-                        <div class="char-arm left"></div>
-                        <div class="char-arm right"></div>
-                        <div class="char-leg left"></div>
-                        <div class="char-leg right"></div>
-                    </div>
-                </div>
+                <!-- Characters (4 farmers) -->
+                <div id="characters-container"></div>
 
                 <div id="farm-grid"></div>
             </div>
@@ -711,18 +729,36 @@
     </div>
 
     <script>
-const CROPS={Wheat:{name:"Wheat",icon:"🌾",price:10,days:2,yield:30,sell:5},Carrot:{name:"Carrot",icon:"🥕",price:15,days:3,yield:20,sell:8},Tomato:{name:"Tomato",icon:"🍅",price:30,days:4,yield:10,sell:15},Strawberry:{name:"Strawberry",icon:"🍓",price:50,days:5,yield:15,sell:20},Sunflower:{name:"Sunflower",icon:"🌻",price:40,days:5,yield:10,sell:18},Pumpkin:{name:"Pumpkin",icon:"🎃",price:200,days:8,yield:1,sell:300}};
+// Crops: type can be 'grain' (10s) or 'fruit' (15s)
+const CROPS={
+    Wheat:{name:"Wheat",icon:"🌾",price:10,time:10,yield:30,sell:5,type:"grain"},
+    Carrot:{name:"Carrot",icon:"🥕",price:15,time:10,yield:20,sell:8,type:"grain"},
+    Corn:{name:"Corn",icon:"🌽",price:20,time:10,yield:25,sell:10,type:"grain"},
+    Tomato:{name:"Tomato",icon:"🍅",price:30,time:15,yield:10,sell:15,type:"fruit"},
+    Strawberry:{name:"Strawberry",icon:"🍓",price:50,time:15,yield:15,sell:20,type:"fruit"},
+    Watermelon:{name:"Watermelon",icon:"🍉",price:80,time:15,yield:8,sell:30,type:"fruit"},
+    Apple:{name:"Apple",icon:"🍎",price:60,time:15,yield:12,sell:25,type:"fruit"},
+    Pumpkin:{name:"Pumpkin",icon:"🎃",price:100,time:15,yield:5,sell:40,type:"fruit"}
+};
 
 const EMOJIS = ['😊', '🤔', '😴', '💪', '❤️', '💰', '🌾', '💦', '🎉', '✨', '🌟', '🌈'];
+
+// Character configurations: [name, gender, shirt color, hat/hair color, hat/hair type]
+const CHARACTERS = [
+    {name: 'Tom', gender: 'male', shirt: '#4169E1', hat: '#FFD700', skin: '#FFE0BD'},
+    {name: 'Lisa', gender: 'female', shirt: '#FF69B4', hair: '#8B4513', skin: '#FFE0BD'},
+    {name: 'Bob', gender: 'male', shirt: '#32CD32', hat: '#DC143C', skin: '#F5DEB3'},
+    {name: 'Anna', gender: 'female', shirt: '#9370DB', hair: '#FFD700', skin: '#FFDAB9'}
+];
 
 class Game{
     constructor(){
         this.gold=1000;this.gems=10;this.fame=50;
         this.date=new Date(2024,4,1);this.day=1;
-        this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null}));
+        this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null,timer:null,remaining:0}));
         this.target={type:"harvest",crop:"Wheat",val:350};
         this.harvested={};
-        this.character={x:50,y:50,moving:false};
+        this.characters=[];
         this.init();
     }
     init(){
@@ -736,33 +772,80 @@ class Game{
             g.appendChild(p);
         }
         this.renderShop();
+        this.createCharacters();
         this.render();
-
-        // Start character movement
         this.startCharacterMovement();
+    }
 
-        // Show emoji every 3-5 seconds
-        setInterval(() => {
-            if (!this.character.moving) {
-                this.showEmoji();
-            }
-        }, Math.random() * 2000 + 3000);
+    createCharacters() {
+        const container = document.getElementById('characters-container');
+        CHARACTERS.forEach((config, i) => {
+            const char = document.createElement('div');
+            char.className = 'character';
+            char.id = 'character-' + i;
+
+            const headStyle = config.gender === 'female' ? `background: ${config.skin}` : `background: ${config.skin}`;
+            const topHead = config.gender === 'female'
+                ? `<div class="char-hair" style="background: ${config.hair}"></div>`
+                : `<div class="char-hat" style="background: ${config.hat}"></div>`;
+
+            char.innerHTML = `
+                <div class="emoji-bubble"></div>
+                <div class="character-body">
+                    ${topHead}
+                    <div class="char-head" style="${headStyle}"></div>
+                    <div class="char-torso" style="background: ${config.shirt}"></div>
+                    <div class="char-arm left"></div>
+                    <div class="char-arm right"></div>
+                    <div class="char-leg left"></div>
+                    <div class="char-leg right"></div>
+                </div>
+            `;
+
+            // Random starting position
+            char.style.left = (20 + i * 20) + '%';
+            char.style.top = (30 + (i % 2) * 30) + '%';
+
+            container.appendChild(char);
+
+            this.characters.push({
+                id: i,
+                element: char,
+                x: 20 + i * 20,
+                y: 30 + (i % 2) * 30,
+                moving: false,
+                busy: false,
+                name: config.name
+            });
+        });
     }
 
     startCharacterMovement() {
-        setInterval(() => {
-            if (!this.character.moving) {
-                this.moveCharacter();
-            }
-        }, 4000);
+        // Each character moves independently
+        this.characters.forEach((char, i) => {
+            setInterval(() => {
+                if (!char.moving && !char.busy) {
+                    this.moveCharacter(i);
+                }
+            }, 3000 + i * 1000);
+
+            // Random emoji showing
+            setInterval(() => {
+                if (!char.moving && !char.busy && Math.random() > 0.6) {
+                    this.showEmoji(i);
+                }
+            }, 4000 + i * 1500);
+        });
+
+        // Check for ready crops every second
+        setInterval(() => this.checkReadyCrops(), 1000);
     }
 
-    moveCharacter() {
-        const char = document.getElementById('character');
-        const container = document.getElementById('farm-container');
+    moveCharacter(charIndex) {
+        const char = this.characters[charIndex];
+        const elem = char.element;
 
-        // Random position within farm area
-        const maxX = 80; // percentage
+        const maxX = 80;
         const maxY = 80;
         const minX = 10;
         const minY = 20;
@@ -770,37 +853,83 @@ class Game{
         const newX = Math.random() * (maxX - minX) + minX;
         const newY = Math.random() * (maxY - minY) + minY;
 
-        this.character.x = newX;
-        this.character.y = newY;
-        this.character.moving = true;
+        char.x = newX;
+        char.y = newY;
+        char.moving = true;
 
-        char.classList.add('walking');
-        char.style.left = newX + '%';
-        char.style.top = newY + '%';
+        elem.classList.add('walking');
+        elem.style.left = newX + '%';
+        elem.style.top = newY + '%';
 
-        // Randomly show emoji during movement
-        if (Math.random() > 0.5) {
-            setTimeout(() => this.showEmoji(), 500);
-        }
-
-        // Stop walking after 1 second
         setTimeout(() => {
-            char.classList.remove('walking');
-            this.character.moving = false;
-        }, 1000);
+            elem.classList.remove('walking');
+            char.moving = false;
+        }, 1500);
     }
 
-    showEmoji() {
-        const bubble = document.querySelector('.emoji-bubble');
-        const emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    showEmoji(charIndex, emoji = null) {
+        const char = this.characters[charIndex];
+        const bubble = char.element.querySelector('.emoji-bubble');
+        const selectedEmoji = emoji || EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
 
-        bubble.textContent = emoji;
+        bubble.textContent = selectedEmoji;
         bubble.classList.add('show');
 
-        // Hide after 2 seconds
         setTimeout(() => {
             bubble.classList.remove('show');
         }, 2000);
+    }
+
+    checkReadyCrops() {
+        this.plots.forEach((plot, i) => {
+            if (plot.crop && !plot.crop.harvesting && plot.remaining <= 0 && !plot.readyNotified) {
+                plot.readyNotified = true;
+                // Find an available character to harvest
+                const availableChar = this.characters.find(c => !c.busy);
+                if (availableChar) {
+                    this.autoHarvest(i, this.characters.indexOf(availableChar));
+                }
+            }
+        });
+    }
+
+    autoHarvest(plotId, charIndex) {
+        const plot = this.plots[plotId];
+        const char = this.characters[charIndex];
+
+        if (!plot.crop || plot.crop.harvesting) return;
+
+        plot.crop.harvesting = true;
+        char.busy = true;
+
+        // Move character to plot
+        const plotElem = document.getElementById('plot-' + plotId);
+        const rect = plotElem.getBoundingClientRect();
+        const containerRect = document.getElementById('farm-container').getBoundingClientRect();
+
+        const targetX = ((rect.left - containerRect.left) / containerRect.width) * 100;
+        const targetY = ((rect.top - containerRect.top) / containerRect.height) * 100;
+
+        char.x = targetX;
+        char.y = targetY;
+        char.moving = true;
+        char.element.classList.add('walking');
+        char.element.style.left = targetX + '%';
+        char.element.style.top = targetY + '%';
+
+        // After arrival, harvest
+        setTimeout(() => {
+            char.element.classList.remove('walking');
+            char.moving = false;
+            this.showEmoji(charIndex, '🌾');
+
+            // Perform harvest after 1 second
+            setTimeout(() => {
+                this.harvest(plotId);
+                char.busy = false;
+                this.showEmoji(charIndex, '💰');
+            }, 1000);
+        }, 1500);
     }
     plant(name,pid){
         const c=CROPS[name];
@@ -808,39 +937,82 @@ class Game{
         const p=this.plots[pid];
         if(p.crop)return alert('Plot occupied!');
         this.gold-=c.price;
-        p.crop={name:c.name,icon:c.icon,days:c.days,yield:c.yield,sell:c.sell,planted:new Date(this.date),age:0,water:100,fert:0};
+
+        p.crop={
+            name:c.name,
+            icon:c.icon,
+            time:c.time,
+            yield:c.yield,
+            sell:c.sell,
+            type:c.type,
+            harvesting:false
+        };
+        p.remaining = c.time;
+        p.readyNotified = false;
+
         this.log('✅ Planted '+c.name);
-        this.showEmojiImmediate('🌱');
+
+        // Find a random character to show planting emoji
+        const randomChar = Math.floor(Math.random() * this.characters.length);
+        this.showEmoji(randomChar, '🌱');
+
+        // Start countdown timer
+        if(p.timer) clearInterval(p.timer);
+        p.timer = setInterval(() => {
+            p.remaining--;
+            if(p.remaining <= 0) {
+                clearInterval(p.timer);
+                p.timer = null;
+            }
+            this.render();
+        }, 1000);
+
         this.render();
         closeModal();
     }
-
-    showEmojiImmediate(emoji) {
-        const bubble = document.querySelector('.emoji-bubble');
-        bubble.textContent = emoji;
-        bubble.classList.add('show');
-        setTimeout(() => {
-            bubble.classList.remove('show');
-        }, 2000);
-    }
     harvest(pid){
         const p=this.plots[pid];
-        if(!p.crop||p.crop.age<p.crop.days)return;
+        if(!p.crop || p.remaining > 0) return;
         const c=p.crop;
-        const amt=Math.floor(c.yield*(c.water>=50?1:0.7)*(c.fert>=50?1.2:1));
+        const amt=c.yield;
         const val=amt*c.sell;
         this.harvested[c.name]=(this.harvested[c.name]||0)+amt;
         this.gold+=val;
         this.log('🌾 Harvested '+amt+' '+c.name+' (+'+val+'g)');
-        this.showEmojiImmediate('💰');
+
+        // Clear plot
+        if(p.timer) clearInterval(p.timer);
         p.crop=null;
+        p.remaining=0;
+        p.readyNotified=false;
         this.render();
     }
-    water(pid){const p=this.plots[pid];if(p.crop)p.crop.water=100;}
-    fert(pid){const p=this.plots[pid];if(p.crop&&this.gold>=20){this.gold-=20;p.crop.fert=100;}}
-    waterAll(){this.plots.forEach((_,i)=>this.water(i));this.log('💧 Watered all');this.showEmojiImmediate('💦');this.render();}
-    fertAll(){const c=this.plots.filter(p=>p.crop).length*20;if(this.gold<c)return alert('Need '+c+'g!');this.plots.forEach((_,i)=>this.fert(i));this.log('🌱 Fertilized all');this.showEmojiImmediate('🌱');this.render();}
-    harvestAll(){let n=0;this.plots.forEach((_,i)=>{const p=this.plots[i];if(p.crop&&p.crop.age>=p.crop.days){this.harvest(i);n++;}});if(n){this.log('🎉 Harvested '+n+' plots');this.showEmojiImmediate('🎉');}}
+    waterAll(){
+        this.log('💧 Watered all');
+        const randomChar = Math.floor(Math.random() * this.characters.length);
+        this.showEmoji(randomChar, '💦');
+    }
+    fertAll(){
+        this.log('🌱 Fertilized all');
+        const randomChar = Math.floor(Math.random() * this.characters.length);
+        this.showEmoji(randomChar, '🌱');
+    }
+    harvestAll(){
+        let n=0;
+        this.plots.forEach((_,i)=>{
+            const p=this.plots[i];
+            if(p.crop && p.remaining <= 0 && !p.crop.harvesting){
+                const availableChar = this.characters.find(c => !c.busy);
+                if (availableChar) {
+                    this.autoHarvest(i, this.characters.indexOf(availableChar));
+                    n++;
+                }
+            }
+        });
+        if(n){
+            this.log('🎉 Harvesting '+n+' plots');
+        }
+    }
     nextDay(){
         this.date=new Date(this.date.getTime()+86400000);
         this.day++;
@@ -872,9 +1044,14 @@ class Game{
         this.plots.forEach((p,i)=>{
             const d=document.getElementById('plot-'+i);
             if(p.crop){
-                const rdy=p.crop.age>=p.crop.days;
+                const rdy=p.remaining <= 0;
                 d.className='plot '+(rdy?'ready':'growing');
-                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="crop"><div class="crop-icon">'+p.crop.icon+'</div><div class="crop-name">'+p.crop.name+'</div><div class="crop-status">'+(rdy?'✅ READY':'⏳ '+(p.crop.days-p.crop.age)+'d')+'</div></div>';
+
+                const timerHtml = rdy
+                    ? '<div class="timer ready">✅ READY!</div>'
+                    : '<div class="timer">⏰ '+p.remaining+'s</div>';
+
+                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="crop"><div class="crop-icon">'+p.crop.icon+'</div><div class="crop-name">'+p.crop.name+'</div>'+timerHtml+'</div>';
             }else{
                 d.className='plot';
                 d.innerHTML='<div class="plot-id">#'+i+'</div><div class="empty-plot">CLICK<br>TO PLANT</div>';
@@ -887,8 +1064,9 @@ class Game{
             const d=document.createElement('div');
             d.className='shop-item';
             const pr=c.yield*c.sell-c.price;
-            d.innerHTML='<div class="shop-header"><span class="shop-name">'+n+'</span><span class="shop-icon">'+c.icon+'</span></div><div class="shop-info">📅'+c.days+'d | 💰'+pr+'g profit</div><div class="shop-price">💰 '+c.price+' GOLD</div>';
-            d.onclick=()=>{const e=this.plots.find(p=>!p.crop);if(!e)return alert('No plots!');this.plant(n,e.id);};
+            const typeLabel = c.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
+            d.innerHTML='<div class="shop-header"><span class="shop-name">'+n+'</span><span class="shop-icon">'+c.icon+'</span></div><div class="shop-info">⏰'+c.time+'s | '+typeLabel+' | 💰+'+pr+'g</div><div class="shop-price">💰 '+c.price+' GOLD</div>';
+            d.onclick=()=>{const e=this.plots.find(p=>!p.crop);if(!e)return alert('No empty plots!');this.plant(n,e.id);};
             s.appendChild(d);
         }
     }
@@ -899,19 +1077,21 @@ class Game{
         const t=document.getElementById('modal-title');
         t.textContent='PLOT #'+pid;
         if(p.crop){
-            const rdy=p.crop.age>=p.crop.days;
+            const rdy=p.remaining <= 0;
+            const typeLabel = p.crop.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
             b.innerHTML='<div style="text-align:center;margin:20px 0;"><div style="font-size:60px;">'+p.crop.icon+'</div><h3>'+p.crop.name+'</h3></div>'
-            +'<div class="stat-line"><span>Status:</span><span>'+(rdy?'✅ READY':'⏳ '+(p.crop.days-p.crop.age)+' days')+'</span></div>'
-            +'<div class="stat-line"><span>Water:</span><span>'+Math.floor(p.crop.water)+'%</span></div>'
-            +'<div class="stat-line"><span>Fertilizer:</span><span>'+Math.floor(p.crop.fert)+'%</span></div>'
-            +'<div style="margin-top:15px;">'+(rdy?'<button class="btn btn-yellow" onclick="game.harvest('+pid+');closeModal();">🌾 HARVEST</button>':'<button class="btn btn-blue" onclick="game.water('+pid+');closeModal();">💧 WATER</button><button class="btn btn-blue" onclick="game.fert('+pid+');closeModal();">🌱 FERTILIZE (20g)</button>')+'</div>';
+            +'<div class="stat-line"><span>Type:</span><span>'+typeLabel+'</span></div>'
+            +'<div class="stat-line"><span>Time:</span><span>'+p.crop.time+' seconds</span></div>'
+            +'<div class="stat-line"><span>Status:</span><span>'+(rdy?'✅ READY':'⏰ '+p.remaining+' seconds remaining')+'</span></div>'
+            +'<div style="margin-top:15px;">'+(rdy?'<button class="btn btn-yellow" onclick="game.harvest('+pid+');closeModal();">🌾 MANUAL HARVEST</button>':'<button class="btn btn-blue" onclick="closeModal();">⏳ WAIT FOR AUTO-HARVEST</button>')+'</div>';
         }else{
             b.innerHTML='<p style="text-align:center;margin:20px 0;">Choose a crop to plant:</p><div id="crops"></div>';
             const cr=document.getElementById('crops');
             for(const[n,c]of Object.entries(CROPS)){
                 const bt=document.createElement('button');
                 bt.className='btn';
-                bt.textContent=c.icon+' '+n+' ('+c.price+'g)';
+                const typeIcon = c.type === 'grain' ? '🌾' : '🍎';
+                bt.textContent=c.icon+' '+n+' ('+c.price+'g, '+c.time+'s) '+typeIcon;
                 bt.onclick=()=>this.plant(n,pid);
                 cr.appendChild(bt);
             }
