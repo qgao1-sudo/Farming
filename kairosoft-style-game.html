@@ -679,15 +679,10 @@
                 <div class="panel" style="margin-top:10px;">
                     <div class="panel-title">🎯 SEASON GOAL</div>
                     <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
-                        Harvest 350 Wheat
+                        Loading...
                     </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress" style="width:0%">0%</div>
-                        </div>
-                        <div style="text-align:center;margin-top:5px;font-size:11px;">
-                            <span id="current">0</span> / <span id="total">350</span>
-                        </div>
+                    <div id="progress-details" style="padding:5px 0;">
+                        <!-- Progress bars will be inserted here -->
                     </div>
                 </div>
 
@@ -761,18 +756,88 @@ const CHARACTERS = [
     {name: 'Anna', gender: 'female', shirt: '#9370DB', hair: '#FFD700', skin: '#FFDAB9'}
 ];
 
-// Season goals - various types
+// Season goals - multi-crop combinations
 const SEASON_GOALS = [
-    {type: 'harvest_specific', crop: 'Wheat', amount: 100, reward_gold: 500, reward_gems: 5, desc: 'Harvest 100 Wheat'},
-    {type: 'harvest_specific', crop: 'Carrot', amount: 80, reward_gold: 600, reward_gems: 5, desc: 'Harvest 80 Carrots'},
-    {type: 'harvest_specific', crop: 'Tomato', amount: 50, reward_gold: 800, reward_gems: 8, desc: 'Harvest 50 Tomatoes'},
-    {type: 'harvest_specific', crop: 'Strawberry', amount: 60, reward_gold: 1000, reward_gems: 10, desc: 'Harvest 60 Strawberries'},
-    {type: 'harvest_mixed', crops: ['Wheat', 'Carrot', 'Corn'], amount: 120, reward_gold: 700, reward_gems: 7, desc: 'Harvest 120 Grains (Wheat/Carrot/Corn)'},
-    {type: 'harvest_mixed', crops: ['Tomato', 'Strawberry', 'Apple'], amount: 80, reward_gold: 1200, reward_gems: 12, desc: 'Harvest 80 Fruits (Tomato/Strawberry/Apple)'},
-    {type: 'earn_gold', amount: 1000, reward_gold: 500, reward_gems: 8, desc: 'Earn 1000 Gold this season'},
-    {type: 'plant_variety', amount: 5, reward_gold: 800, reward_gems: 10, desc: 'Plant 5 different crop types'},
-    {type: 'total_harvest', amount: 150, reward_gold: 800, reward_gems: 8, desc: 'Harvest 150 crops total'},
-    {type: 'harvest_expensive', crops: ['Watermelon', 'Pumpkin', 'Apple'], amount: 30, reward_gold: 1500, reward_gems: 15, desc: 'Harvest 30 Premium Crops'}
+    // Easy goals (1-2 crops)
+    {
+        requirements: [
+            {crop: 'Wheat', amount: 100}
+        ],
+        reward_gold: 500, reward_gems: 5
+    },
+    {
+        requirements: [
+            {crop: 'Carrot', amount: 80},
+            {crop: 'Wheat', amount: 30}
+        ],
+        reward_gold: 700, reward_gems: 7
+    },
+    {
+        requirements: [
+            {crop: 'Tomato', amount: 50},
+            {crop: 'Carrot', amount: 40}
+        ],
+        reward_gold: 800, reward_gems: 8
+    },
+    // Medium goals (2-3 crops)
+    {
+        requirements: [
+            {crop: 'Wheat', amount: 50},
+            {crop: 'Carrot', amount: 50},
+            {crop: 'Corn', amount: 40}
+        ],
+        reward_gold: 900, reward_gems: 9
+    },
+    {
+        requirements: [
+            {crop: 'Carrot', amount: 50},
+            {crop: 'Wheat', amount: 100},
+            {crop: 'Apple', amount: 40}
+        ],
+        reward_gold: 1200, reward_gems: 12
+    },
+    {
+        requirements: [
+            {crop: 'Tomato', amount: 60},
+            {crop: 'Strawberry', amount: 50}
+        ],
+        reward_gold: 1100, reward_gems: 11
+    },
+    // Hard goals (3-4 crops)
+    {
+        requirements: [
+            {crop: 'Wheat', amount: 80},
+            {crop: 'Carrot', amount: 60},
+            {crop: 'Tomato', amount: 40},
+            {crop: 'Corn', amount: 50}
+        ],
+        reward_gold: 1500, reward_gems: 15
+    },
+    {
+        requirements: [
+            {crop: 'Apple', amount: 50},
+            {crop: 'Strawberry', amount: 60},
+            {crop: 'Watermelon', amount: 30}
+        ],
+        reward_gold: 1800, reward_gems: 18
+    },
+    {
+        requirements: [
+            {crop: 'Corn', amount: 70},
+            {crop: 'Tomato', amount: 50},
+            {crop: 'Pumpkin', amount: 20}
+        ],
+        reward_gold: 1400, reward_gems: 14
+    },
+    {
+        requirements: [
+            {crop: 'Wheat', amount: 120},
+            {crop: 'Carrot', amount: 80},
+            {crop: 'Apple', amount: 60},
+            {crop: 'Strawberry', amount: 40}
+        ],
+        reward_gold: 2000, reward_gems: 20
+    }
 ];
 
 const SEASON_TIME = 180; // 3 minutes in seconds
@@ -1077,33 +1142,40 @@ class Game{
     }
     getGoalProgress(){
         const goal=this.currentGoal;
-        switch(goal.type){
-            case 'harvest_specific':
-                return this.harvested[goal.crop]||0;
-            case 'harvest_mixed':
-                return goal.crops.reduce((sum,crop)=>(sum+(this.harvested[crop]||0)),0);
-            case 'earn_gold':
-                return this.seasonGoldEarned;
-            case 'plant_variety':
-                return this.plantedTypes.size;
-            case 'total_harvest':
-                return Object.values(this.harvested).reduce((a,b)=>a+b,0);
-            case 'harvest_expensive':
-                return goal.crops.reduce((sum,crop)=>(sum+(this.harvested[crop]||0)),0);
-            default:
-                return 0;
-        }
+        // Return array of progress for each requirement
+        return goal.requirements.map(req => ({
+            crop: req.crop,
+            current: this.harvested[req.crop] || 0,
+            target: req.amount,
+            completed: (this.harvested[req.crop] || 0) >= req.amount
+        }));
+    }
+
+    isGoalComplete(){
+        const progress = this.getGoalProgress();
+        return progress.every(p => p.completed);
+    }
+
+    getGoalDescription(){
+        const goal = this.currentGoal;
+        return goal.requirements.map(req =>
+            `${req.amount} ${CROPS[req.crop].icon} ${req.crop}`
+        ).join(' + ');
     }
 
     endSeason(){
         clearInterval(this.seasonTimer);
         const progress=this.getGoalProgress();
         const goal=this.currentGoal;
-        const success=progress>=goal.amount;
+        const success=this.isGoalComplete();
 
         let msg='🗓️ SEASON END!\n\n';
-        msg+='Goal: '+goal.desc+'\n';
-        msg+='Progress: '+progress+'/'+goal.amount+'\n\n';
+        msg+='Goal:\n';
+        progress.forEach(p => {
+            const icon = p.completed ? '✅' : '❌';
+            msg += `${icon} ${p.current}/${p.target} ${CROPS[p.crop].icon} ${p.crop}\n`;
+        });
+        msg+='\n';
 
         if(success){
             this.gold+=goal.reward_gold;
@@ -1148,17 +1220,27 @@ class Game{
         document.getElementById('date').textContent=m[this.date.getMonth()]+' '+this.date.getDate();
         document.getElementById('day').textContent=this.day;
 
-        // Update goal display
-        const progress=this.getGoalProgress();
-        const goalAmount=this.currentGoal.amount;
-        const pct=Math.min(100,(progress/goalAmount)*100);
+        // Update goal display - show description
+        document.getElementById('goal-text').textContent=this.getGoalDescription();
 
-        document.getElementById('goal-text').textContent=this.currentGoal.desc;
-        document.getElementById('current').textContent=progress;
-        document.getElementById('total').textContent=goalAmount;
-        const pb=document.getElementById('progress');
-        pb.style.width=pct+'%';
-        pb.textContent=Math.floor(pct)+'%';
+        // Update progress display - show detailed progress for each crop
+        const progressArray=this.getGoalProgress();
+        let progressHtml = '';
+        progressArray.forEach(p => {
+            const pct = Math.min(100, (p.current / p.target) * 100);
+            const color = p.completed ? '#32CD32' : '#FF6347';
+            const icon = p.completed ? '✅' : '⏳';
+            progressHtml += `<div style="margin:5px 0;">`;
+            progressHtml += `<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;">`;
+            progressHtml += `<span>${icon} ${CROPS[p.crop].icon} ${p.crop}</span>`;
+            progressHtml += `<span style="font-weight:bold;">${p.current}/${p.target}</span>`;
+            progressHtml += `</div>`;
+            progressHtml += `<div style="height:8px;background:white;border:2px solid #333;">`;
+            progressHtml += `<div style="height:100%;width:${pct}%;background:${color};transition:width 0.3s;"></div>`;
+            progressHtml += `</div>`;
+            progressHtml += `</div>`;
+        });
+        document.getElementById('progress-details').innerHTML = progressHtml;
 
         this.plots.forEach((p,i)=>{
             const d=document.getElementById('plot-'+i);
