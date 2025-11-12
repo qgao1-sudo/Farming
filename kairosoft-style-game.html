@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v2.1 - Separate Shops</div>
+            <div class="version">v2.2 - Speed Booster Added</div>
         </div>
 
         <div id="main-area">
@@ -1142,6 +1142,8 @@ class Game{
         this.isResting=false;
         this.restRemaining=30;
         this.seasonNumber=1;
+        this.seedInventory={};
+        this.speedBoosters=0;
         this.init();
     }
     selectRandomGoal(){
@@ -1712,6 +1714,43 @@ class Game{
         this.renderSeedShop();
     }
 
+    buySpeedBooster(){
+        const cost=20;
+        if(this.exp<cost){
+            alert('Not enough EXP! Need '+cost+' EXP');
+            return;
+        }
+
+        this.exp-=cost;
+        this.speedBoosters++;
+
+        this.log('✅ Bought Speed Booster! ⚡');
+        this.render();
+        this.renderShop();
+        this.renderSeedShop();
+    }
+
+    useSpeedBooster(plotId){
+        if(this.speedBoosters<=0){
+            alert('No speed boosters available!');
+            return;
+        }
+
+        const plot=this.plots[plotId];
+        if(!plot.crop || plot.remaining<=0){
+            alert('No growing crop on this plot!');
+            return;
+        }
+
+        this.speedBoosters--;
+        plot.remaining=Math.max(0, plot.remaining-10);
+
+        this.log('⚡ Used Speed Booster! -10s on plot #'+plotId);
+        this.render();
+        this.renderSeedShop();
+        closeModal();
+    }
+
     render(){
         document.getElementById('gold').textContent=this.gold;
         document.getElementById('gems').textContent=this.gems;
@@ -1784,6 +1823,18 @@ class Game{
         const s=document.getElementById('seed-shop');
         s.innerHTML = ''; // Clear existing content
 
+        // Speed Booster item
+        const boosterDiv=document.createElement('div');
+        boosterDiv.className='shop-item';
+        boosterDiv.innerHTML='<div class="shop-header"><span class="shop-name">⚡ Speed Booster</span><span class="shop-icon" style="font-size:24px;">⚡</span></div><div class="shop-info">Reduce 10s growth time | Own: '+this.speedBoosters+'</div><div class="shop-price" style="background:#FF6347;">⭐ 20 EXP</div>';
+        boosterDiv.onclick=()=>this.buySpeedBooster();
+        s.appendChild(boosterDiv);
+
+        // Separator
+        const separator=document.createElement('div');
+        separator.innerHTML='<div style="border-top:2px dashed #DEB887;margin:10px 0;"></div>';
+        s.appendChild(separator);
+
         const seedCost=30;
         for(const[name,crop]of Object.entries(CROPS)){
             const d=document.createElement('div');
@@ -1803,11 +1854,22 @@ class Game{
         if(p.crop){
             const rdy=p.remaining <= 0;
             const typeLabel = p.crop.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
+            let buttonsHtml='';
+            if(rdy){
+                buttonsHtml='<button class="btn btn-yellow" onclick="game.harvest('+pid+');closeModal();">🌾 MANUAL HARVEST</button>';
+            }else{
+                buttonsHtml='<button class="btn btn-blue" onclick="closeModal();">⏳ WAIT FOR AUTO-HARVEST</button>';
+                // Add speed booster button if available and crop is still growing
+                if(this.speedBoosters>0){
+                    buttonsHtml+='<button class="btn" style="background:#FF6347;margin-top:5px;" onclick="game.useSpeedBooster('+pid+');">⚡ USE SPEED BOOSTER (-10s)</button>';
+                    buttonsHtml+='<div style="text-align:center;font-size:10px;margin-top:5px;color:#666;">You have '+this.speedBoosters+' booster(s)</div>';
+                }
+            }
             b.innerHTML='<div style="text-align:center;margin:20px 0;"><div style="font-size:60px;">'+p.crop.icon+'</div><h3>'+p.crop.name+'</h3></div>'
             +'<div class="stat-line"><span>Type:</span><span>'+typeLabel+'</span></div>'
             +'<div class="stat-line"><span>Time:</span><span>'+p.crop.time+' seconds</span></div>'
             +'<div class="stat-line"><span>Status:</span><span>'+(rdy?'✅ READY':'⏰ '+p.remaining+' seconds remaining')+'</span></div>'
-            +'<div style="margin-top:15px;">'+(rdy?'<button class="btn btn-yellow" onclick="game.harvest('+pid+');closeModal();">🌾 MANUAL HARVEST</button>':'<button class="btn btn-blue" onclick="closeModal();">⏳ WAIT FOR AUTO-HARVEST</button>')+'</div>';
+            +'<div style="margin-top:15px;">'+buttonsHtml+'</div>';
         }else{
             b.innerHTML='<p style="text-align:center;margin:20px 0;">Choose a crop to plant:</p><div id="crops"></div>';
             const cr=document.getElementById('crops');
