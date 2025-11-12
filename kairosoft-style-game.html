@@ -82,6 +82,12 @@
             animation: bounce 2s infinite;
         }
 
+        .version {
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            text-shadow: 1px 1px 0 #333;
+        }
+
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
@@ -855,6 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
+            <div class="version">v2.0 - Shop Reorganized</div>
         </div>
 
         <div id="main-area">
@@ -942,7 +949,7 @@
             <div>
                 <div class="panel">
                     <div class="panel-title">🏪 SHOP</div>
-                    <div id="shop" style="max-height:400px;overflow-y:auto;"></div>
+                    <div id="shop" style="max-height:600px;overflow-y:auto;"></div>
                 </div>
             </div>
         </div>
