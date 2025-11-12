@@ -250,6 +250,78 @@
             box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
         }
 
+        /* Pixel art eyes */
+        .char-eye {
+            width: 2px;
+            height: 2px;
+            background: #333;
+            position: absolute;
+            top: 3px;
+        }
+
+        .char-eye.left { left: 2px; }
+        .char-eye.right { right: 2px; }
+
+        /* Eye expressions */
+        .char-eye.happy {
+            height: 1px;
+            top: 4px;
+        }
+
+        .char-eye.closed {
+            height: 1px;
+            background: #333;
+        }
+
+        .char-eye.surprised {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+        }
+
+        /* Pixel art mouth */
+        .char-mouth {
+            width: 4px;
+            height: 1px;
+            background: #333;
+            position: absolute;
+            top: 7px;
+            left: 4px;
+        }
+
+        /* Mouth expressions */
+        .char-mouth.smile {
+            height: 2px;
+            border-radius: 0 0 2px 2px;
+            background: transparent;
+            border-bottom: 1px solid #333;
+            border-left: 1px solid #333;
+            border-right: 1px solid #333;
+        }
+
+        .char-mouth.open {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            left: 4.5px;
+            top: 6px;
+        }
+
+        .char-mouth.work {
+            width: 3px;
+            left: 4.5px;
+        }
+
+        /* Expression animations */
+        @keyframes blink {
+            0%, 90%, 100% { height: 2px; }
+            95% { height: 1px; }
+        }
+
+        .character:not(.working) .char-eye {
+            animation: blink 3s infinite;
+        }
+
         /* Hat */
         .char-hat {
             width: 16px;
@@ -1270,7 +1342,11 @@ class Game{
                 <div class="emoji-bubble"></div>
                 <div class="character-body">
                     ${topHead}
-                    <div class="char-head" style="${headStyle}"></div>
+                    <div class="char-head" style="${headStyle}">
+                        <div class="char-eye left"></div>
+                        <div class="char-eye right"></div>
+                        <div class="char-mouth"></div>
+                    </div>
                     <div class="char-torso" style="background: ${config.shirt}"></div>
                     <div class="char-arm left"></div>
                     <div class="char-arm right"></div>
@@ -1334,6 +1410,11 @@ class Game{
         char.y = newY;
         char.moving = true;
 
+        // Random expression while walking
+        const expressions = ['neutral', 'neutral', 'happy'];
+        const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
+        this.setExpression(charIndex, randomExpression);
+
         elem.classList.add('walking');
         elem.style.left = newX + '%';
         elem.style.top = newY + '%';
@@ -1341,6 +1422,7 @@ class Game{
         setTimeout(() => {
             elem.classList.remove('walking');
             char.moving = false;
+            this.resetExpression(charIndex);
         }, 1500);
     }
 
@@ -1355,6 +1437,49 @@ class Game{
         setTimeout(() => {
             bubble.classList.remove('show');
         }, 2000);
+    }
+
+    setExpression(charIndex, expression) {
+        const char = this.characters[charIndex];
+        const leftEye = char.element.querySelector('.char-eye.left');
+        const rightEye = char.element.querySelector('.char-eye.right');
+        const mouth = char.element.querySelector('.char-mouth');
+
+        // Remove all expression classes
+        leftEye.className = 'char-eye left';
+        rightEye.className = 'char-eye right';
+        mouth.className = 'char-mouth';
+
+        // Add new expression classes
+        switch(expression) {
+            case 'happy':
+                leftEye.classList.add('happy');
+                rightEye.classList.add('happy');
+                mouth.classList.add('smile');
+                break;
+            case 'working':
+                mouth.classList.add('work');
+                char.element.classList.add('working');
+                break;
+            case 'surprised':
+                leftEye.classList.add('surprised');
+                rightEye.classList.add('surprised');
+                mouth.classList.add('open');
+                break;
+            case 'tired':
+                leftEye.classList.add('closed');
+                rightEye.classList.add('closed');
+                break;
+            default:
+                // neutral expression (default)
+                break;
+        }
+    }
+
+    resetExpression(charIndex) {
+        const char = this.characters[charIndex];
+        char.element.classList.remove('working');
+        this.setExpression(charIndex, 'neutral');
     }
 
     checkReadyCrops() {
@@ -1379,6 +1504,9 @@ class Game{
         plot.crop.harvesting = true;
         char.busy = true;
 
+        // Surprised expression when noticing ready crop
+        this.setExpression(charIndex, 'surprised');
+
         // Move character to plot
         const plotElem = document.getElementById('plot-' + plotId);
         const rect = plotElem.getBoundingClientRect();
@@ -1398,13 +1526,24 @@ class Game{
         setTimeout(() => {
             char.element.classList.remove('walking');
             char.moving = false;
+
+            // Working expression while harvesting
+            this.setExpression(charIndex, 'working');
             this.showEmoji(charIndex, '🌾');
 
             // Perform harvest after 1 second
             setTimeout(() => {
                 this.harvest(plotId);
                 char.busy = false;
+
+                // Happy expression after successful harvest
+                this.setExpression(charIndex, 'happy');
                 this.showEmoji(charIndex, '💰');
+
+                // Reset to neutral after a moment
+                setTimeout(() => {
+                    this.resetExpression(charIndex);
+                }, 2000);
             }, 1000);
         }, 1500);
     }
@@ -1696,7 +1835,11 @@ class Game{
             <div class="emoji-bubble"></div>
             <div class="character-body">
                 ${topHead}
-                <div class="char-head" style="background:${config.skin}"></div>
+                <div class="char-head" style="background:${config.skin}">
+                    <div class="char-eye left"></div>
+                    <div class="char-eye right"></div>
+                    <div class="char-mouth"></div>
+                </div>
                 <div class="char-torso" style="background:${config.shirt}"></div>
                 <div class="char-arm left"></div>
                 <div class="char-arm right"></div>
