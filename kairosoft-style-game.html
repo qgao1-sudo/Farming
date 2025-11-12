@@ -395,10 +395,23 @@
         }
 
         .plot.growing {
-            background: #6B8E23;
+            background: #8B7355;
             background-image:
-                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px),
-                repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px);
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px),
+                repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px);
+            transition: background 0.5s;
+        }
+
+        .plot.growing.sprouting {
+            background: #A0826D;
+        }
+
+        .plot.growing.planted {
+            background: #8B7355;
+        }
+
+        .plot.growing.maturing {
+            background: #9ACD32;
         }
 
         .plot.ready {
@@ -443,27 +456,40 @@
 
         /* Growth stages */
         .crop-icon.stage-sprout {
-            font-size: 20px;
-            transform: scale(0.5);
-            opacity: 0.7;
+            font-size: 30px;
+            transform: scale(0.7);
+            opacity: 0.8;
+            animation: sproutPop 0.5s ease-out;
+        }
+
+        @keyframes sproutPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(0.7); opacity: 0.8; }
         }
 
         .crop-icon.stage-growing {
-            font-size: 35px;
-            transform: scale(0.75);
-            opacity: 0.85;
+            font-size: 38px;
+            transform: scale(0.8);
+            opacity: 0.9;
         }
 
         .crop-icon.stage-maturing {
-            font-size: 45px;
-            transform: scale(0.9);
-            opacity: 0.95;
+            font-size: 46px;
+            transform: scale(0.95);
+            opacity: 0.98;
         }
 
         .crop-icon.stage-ready {
             font-size: 50px;
             transform: scale(1);
             opacity: 1;
+            animation: readyBounce 0.5s ease-out;
+        }
+
+        @keyframes readyBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         @keyframes wiggle {
@@ -897,7 +923,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v3.2 - Growing Animation 🌱🌿🍍</div>
+            <div class="version">v3.3 - Sprout Animation Fixed! 🌱✨</div>
         </div>
 
         <div id="main-area">
@@ -1805,7 +1831,6 @@ class Game{
             const d=document.getElementById('plot-'+i);
             if(p.crop){
                 const rdy=p.remaining <= 0;
-                d.className='plot '+(rdy?'ready':'growing');
 
                 // Calculate growth progress
                 const totalTime = p.crop.time;
@@ -1813,24 +1838,30 @@ class Game{
                 const progress = elapsed / totalTime;
 
                 // Determine growth stage and icon
-                let cropIcon, growthStage, stageName;
+                let cropIcon, growthStage, stageName, plotClass;
                 if(rdy){
                     cropIcon = p.crop.icon;
                     growthStage = 'stage-ready';
                     stageName = 'Ready!';
+                    plotClass = 'plot ready';
                 } else if(progress < 0.33){
                     cropIcon = '🌱'; // Sprout
                     growthStage = 'stage-sprout';
                     stageName = 'Sprouting';
+                    plotClass = 'plot growing sprouting';
                 } else if(progress < 0.66){
                     cropIcon = '🌿'; // Growing
                     growthStage = 'stage-growing';
                     stageName = 'Growing';
+                    plotClass = 'plot growing planted';
                 } else {
                     cropIcon = p.crop.icon; // Actual fruit, but smaller
                     growthStage = 'stage-maturing';
                     stageName = 'Maturing';
+                    plotClass = 'plot growing maturing';
                 }
+
+                d.className = plotClass;
 
                 const timerHtml = rdy
                     ? '<div class="timer ready">✅ READY!</div>'
