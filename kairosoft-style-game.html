@@ -871,9 +871,16 @@
                         <span class="stat-value" id="gems">10</span>
                     </div>
                     <div class="stat-line">
-                        <span>⭐ Fame:</span>
-                        <span class="stat-value" id="fame">50</span>
+                        <span>⭐ EXP:</span>
+                        <span class="stat-value" id="exp">0</span>
                     </div>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <div class="panel-title">🏪 UPGRADE SHOP</div>
+                    <button class="btn" style="background:#9370DB;" onclick="game.showUpgradeShop()">
+                        💫 OPEN SHOP
+                    </button>
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
@@ -953,6 +960,19 @@
                 <span id="modal-title">PLOT</span>
             </div>
             <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Upgrade Shop Modal -->
+    <div id="upgrade-shop-modal" class="modal" style="z-index:1500;">
+        <div class="modal-content" style="max-width:700px;">
+            <div class="modal-header" style="background:#9370DB;">
+                <span class="close" onclick="closeUpgradeShop()">&times;</span>
+                <span>💫 UPGRADE SHOP</span>
+            </div>
+            <div id="upgrade-shop-body" style="padding:20px;">
+                <!-- Shop items will be inserted here -->
+            </div>
         </div>
     </div>
 
@@ -1115,9 +1135,10 @@ const SEASON_TIME = 180; // 3 minutes in seconds
 
 class Game{
     constructor(){
-        this.gold=1000;this.gems=10;this.fame=50;
+        this.gold=1000;this.gems=10;this.fame=50;this.exp=0;
         this.date=new Date(2024,4,1);this.day=1;
         this.plots=Array(9).fill().map((_,i)=>({id:i,crop:null,timer:null,remaining:0}));
+        this.maxPlots=9;
         this.harvested={};
         this.plantedTypes=new Set();
         this.seasonStartGold=1000;
@@ -1330,10 +1351,18 @@ class Game{
     }
     plant(name,pid){
         const c=CROPS[name];
-        if(this.gold<c.price)return alert('Not enough gold!');
         const p=this.plots[pid];
         if(p.crop)return alert('Plot occupied!');
-        this.gold-=c.price;
+
+        // Check if has seeds in inventory first
+        if(this.seedInventory && this.seedInventory[name]>0){
+            this.seedInventory[name]--;
+            this.log('🌱 Used 1 '+name+' seed from inventory');
+        }else{
+            // Pay with gold
+            if(this.gold<c.price)return alert('Not enough gold!');
+            this.gold-=c.price;
+        }
 
         p.crop={
             name:c.name,
@@ -1449,8 +1478,11 @@ class Game{
         if(success){
             this.gold+=goal.reward_gold;
             this.gems+=goal.reward_gems;
+            // Award EXP based on goal difficulty
+            const expReward=Math.floor(goal.reward_gold/10);
+            this.exp+=expReward;
             this.showEmoji(0,'🎉');
-            this.log('🎉 Season '+this.seasonNumber+' completed!');
+            this.log('🎉 Season '+this.seasonNumber+' completed! +'+expReward+' EXP');
         }else{
             this.showEmoji(0,'😢');
             this.log('💔 Season '+this.seasonNumber+' failed');
@@ -1487,6 +1519,7 @@ class Game{
 
         // Rewards
         if(success){
+            const expReward=Math.floor(goal.reward_gold/10);
             statsHtml+='<h3 style="text-align:center;margin:15px 0;color:#333;">🎁 Rewards</h3>';
             statsHtml+=`<div class="stat-item">
                 <span class="stat-label">💰 Gold Earned</span>
@@ -1495,6 +1528,10 @@ class Game{
             statsHtml+=`<div class="stat-item">
                 <span class="stat-label">💎 Gems Earned</span>
                 <span class="stat-value" style="color:#00CED1">+${goal.reward_gems}</span>
+            </div>`;
+            statsHtml+=`<div class="stat-item">
+                <span class="stat-label">⭐ EXP Earned</span>
+                <span class="stat-value" style="color:#9370DB">+${expReward}</span>
             </div>`;
         }
 
@@ -1567,10 +1604,167 @@ class Game{
         this.log('📅 Day '+this.day);
         this.render();
     }
+    showUpgradeShop(){
+        const modal=document.getElementById('upgrade-shop-modal');
+        const body=document.getElementById('upgrade-shop-body');
+
+        let html='<div style="text-align:center;margin-bottom:20px;font-size:18px;font-weight:bold;color:#9370DB;">Your EXP: '+this.exp+'</div>';
+
+        // Worker upgrade
+        const workerCost=50*(this.characters.length-3);
+        html+='<div class="shop-item" onclick="game.buyWorker()">';
+        html+='<div class="shop-header">';
+        html+='<span class="shop-name">👷 Hire New Worker</span>';
+        html+='<span class="shop-icon" style="font-size:30px;">🧑‍🌾</span>';
+        html+='</div>';
+        html+='<div class="shop-info">Add one more worker to help harvest crops</div>';
+        html+='<div class="shop-price" style="background:#9370DB;">⭐ '+workerCost+' EXP</div>';
+        html+='</div>';
+
+        // Plot upgrade
+        const plotCost=100*(Math.floor((this.maxPlots-9)/3)+1);
+        html+='<div class="shop-item" onclick="game.buyPlots()">';
+        html+='<div class="shop-header">';
+        html+='<span class="shop-name">🌾 Expand Farm (+3 plots)</span>';
+        html+='<span class="shop-icon" style="font-size:30px;">🏞️</span>';
+        html+='</div>';
+        html+='<div class="shop-info">Add 3 more farm plots to grow more crops</div>';
+        html+='<div class="shop-price" style="background:#9370DB;">⭐ '+plotCost+' EXP</div>';
+        html+='</div>';
+
+        // Seed packages
+        const seedCost=30;
+        for(const[name,crop]of Object.entries(CROPS)){
+            html+='<div class="shop-item" onclick="game.buySeedPack(\''+name+'\')">';
+            html+='<div class="shop-header">';
+            html+='<span class="shop-name">'+crop.icon+' '+name+' Seed Pack (x5)</span>';
+            html+='<span class="shop-icon" style="font-size:30px;">'+crop.icon+'</span>';
+            html+='</div>';
+            html+='<div class="shop-info">Get 5 '+name+' seeds for free planting</div>';
+            html+='<div class="shop-price" style="background:#9370DB;">⭐ '+seedCost+' EXP</div>';
+            html+='</div>';
+        }
+
+        body.innerHTML=html;
+        modal.style.display='block';
+    }
+
+    buyWorker(){
+        const cost=50*(this.characters.length-3);
+        if(this.exp<cost){
+            alert('Not enough EXP! Need '+cost+' EXP');
+            return;
+        }
+
+        this.exp-=cost;
+
+        // Create new worker with random appearance
+        const colors=[
+            {shirt:'#FF6347',hat:'#FFD700',gender:'male'},
+            {shirt:'#32CD32',hat:'#FF69B4',gender:'female'},
+            {shirt:'#FFA500',hat:'#8B4513',gender:'male'},
+            {shirt:'#00CED1',hat:'#9370DB',gender:'female'}
+        ];
+        const config=colors[Math.floor(Math.random()*colors.length)];
+        config.name='Worker'+(this.characters.length+1);
+        config.skin='#FFE0BD';
+
+        const id=this.characters.length;
+        const char=document.createElement('div');
+        char.className='character';
+        char.id='character-'+id;
+
+        const topHead=config.gender==='female'
+            ?`<div class="char-hair" style="background:${config.hat}"></div>`
+            :`<div class="char-hat" style="background:${config.hat}"></div>`;
+
+        char.innerHTML=`
+            <div class="emoji-bubble"></div>
+            <div class="character-body">
+                ${topHead}
+                <div class="char-head" style="background:${config.skin}"></div>
+                <div class="char-torso" style="background:${config.shirt}"></div>
+                <div class="char-arm left"></div>
+                <div class="char-arm right"></div>
+                <div class="char-leg left"></div>
+                <div class="char-leg right"></div>
+            </div>
+        `;
+
+        char.style.left=(20+id*15)+'%';
+        char.style.top=(30+(id%2)*20)+'%';
+
+        document.getElementById('characters-container').appendChild(char);
+
+        this.characters.push({
+            id:id,
+            element:char,
+            x:20+id*15,
+            y:30+(id%2)*20,
+            moving:false,
+            busy:false,
+            name:config.name
+        });
+
+        this.log('✅ Hired '+config.name+'!');
+        this.render();
+        closeUpgradeShop();
+    }
+
+    buyPlots(){
+        const cost=100*(Math.floor((this.maxPlots-9)/3)+1);
+        if(this.exp<cost){
+            alert('Not enough EXP! Need '+cost+' EXP');
+            return;
+        }
+
+        this.exp-=cost;
+        this.maxPlots+=3;
+
+        // Add 3 new plots
+        const grid=document.getElementById('farm-grid');
+        const currentCols=Math.ceil(Math.sqrt(this.maxPlots));
+        grid.style.gridTemplateColumns=`repeat(${currentCols}, 1fr)`;
+
+        for(let i=0;i<3;i++){
+            const pid=this.plots.length;
+            const p=document.createElement('div');
+            p.className='plot';
+            p.id='plot-'+pid;
+            p.innerHTML='<div class="plot-id">#'+pid+'</div><div class="empty-plot">CLICK<br>TO PLANT</div>';
+            p.onclick=()=>this.showModal(pid);
+            grid.appendChild(p);
+
+            this.plots.push({id:pid,crop:null,timer:null,remaining:0});
+        }
+
+        this.log('✅ Expanded farm! +3 plots');
+        this.render();
+        closeUpgradeShop();
+    }
+
+    buySeedPack(cropName){
+        const cost=30;
+        if(this.exp<cost){
+            alert('Not enough EXP! Need '+cost+' EXP');
+            return;
+        }
+
+        this.exp-=cost;
+
+        // Add seeds to inventory (free planting)
+        if(!this.seedInventory)this.seedInventory={};
+        this.seedInventory[cropName]=(this.seedInventory[cropName]||0)+5;
+
+        this.log('✅ Bought 5 '+cropName+' seeds!');
+        this.render();
+        closeUpgradeShop();
+    }
+
     render(){
         document.getElementById('gold').textContent=this.gold;
         document.getElementById('gems').textContent=this.gems;
-        document.getElementById('fame').textContent=this.fame;
+        document.getElementById('exp').textContent=this.exp;
         const m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         document.getElementById('date').textContent=m[this.date.getMonth()]+' '+this.date.getDate();
         document.getElementById('day').textContent=this.day;
@@ -1665,7 +1859,11 @@ class Game{
 }
 
 function closeModal(){document.getElementById('modal').style.display='none';}
-window.onclick=e=>{if(e.target.id==='modal')closeModal();};
+function closeUpgradeShop(){document.getElementById('upgrade-shop-modal').style.display='none';}
+window.onclick=e=>{
+    if(e.target.id==='modal')closeModal();
+    if(e.target.id==='upgrade-shop-modal')closeUpgradeShop();
+};
 
 let game;
 window.onload=()=>{game=new Game();game.log('🎮 Welcome to Gloria\'s Magic Farm!');game.log('💡 Plant crops and reach your goals!');};
