@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v2.2 - Speed Booster Added</div>
+            <div class="version">v2.3 - Speed Booster in Right Shop</div>
         </div>
 
         <div id="main-area">
@@ -1747,6 +1747,7 @@ class Game{
 
         this.log('⚡ Used Speed Booster! -10s on plot #'+plotId);
         this.render();
+        this.renderShop();
         this.renderSeedShop();
         closeModal();
     }
@@ -1802,6 +1803,13 @@ class Game{
         const s=document.getElementById('shop');
         s.innerHTML = ''; // Clear existing content
 
+        // Speed Booster item
+        const boosterDiv=document.createElement('div');
+        boosterDiv.className='shop-item';
+        boosterDiv.innerHTML='<div class="shop-header"><span class="shop-name">⚡ Speed Booster</span><span class="shop-icon" style="font-size:30px;">⚡</span></div><div class="shop-info">Reduce 10s growth time | Own: '+this.speedBoosters+'</div><div class="shop-price" style="background:#FF6347;">⭐ 20 EXP</div>';
+        boosterDiv.onclick=()=>this.buySpeedBooster();
+        s.appendChild(boosterDiv);
+
         // Worker upgrade
         const workerCost=50*(this.characters.length-3);
         const workerDiv=document.createElement('div');
@@ -1822,18 +1830,6 @@ class Game{
     renderSeedShop(){
         const s=document.getElementById('seed-shop');
         s.innerHTML = ''; // Clear existing content
-
-        // Speed Booster item
-        const boosterDiv=document.createElement('div');
-        boosterDiv.className='shop-item';
-        boosterDiv.innerHTML='<div class="shop-header"><span class="shop-name">⚡ Speed Booster</span><span class="shop-icon" style="font-size:24px;">⚡</span></div><div class="shop-info">Reduce 10s growth time | Own: '+this.speedBoosters+'</div><div class="shop-price" style="background:#FF6347;">⭐ 20 EXP</div>';
-        boosterDiv.onclick=()=>this.buySpeedBooster();
-        s.appendChild(boosterDiv);
-
-        // Separator
-        const separator=document.createElement('div');
-        separator.innerHTML='<div style="border-top:2px dashed #DEB887;margin:10px 0;"></div>';
-        s.appendChild(separator);
 
         const seedCost=30;
         for(const[name,crop]of Object.entries(CROPS)){
