@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v3.0 - Seed Shop Uses Gold 💰</div>
+            <div class="version">v3.1 - New Tropical Fruits 🍍🍒🍇</div>
         </div>
 
         <div id="main-area">
@@ -1019,14 +1019,16 @@
     <script>
 // Crops: type can be 'grain' (10s) or 'fruit' (15s)
 const CROPS={
-    Wheat:{name:"Wheat",icon:"🌾",price:10,time:10,yield:30,sell:5,type:"grain"},
-    Carrot:{name:"Carrot",icon:"🥕",price:15,time:10,yield:20,sell:8,type:"grain"},
-    Corn:{name:"Corn",icon:"🌽",price:20,time:10,yield:25,sell:10,type:"grain"},
-    Tomato:{name:"Tomato",icon:"🍅",price:30,time:15,yield:10,sell:15,type:"fruit"},
-    Strawberry:{name:"Strawberry",icon:"🍓",price:50,time:15,yield:15,sell:20,type:"fruit"},
-    Watermelon:{name:"Watermelon",icon:"🍉",price:80,time:15,yield:8,sell:30,type:"fruit"},
-    Apple:{name:"Apple",icon:"🍎",price:60,time:15,yield:12,sell:25,type:"fruit"},
-    Pumpkin:{name:"Pumpkin",icon:"🎃",price:100,time:15,yield:5,sell:40,type:"fruit"}
+    Pineapple:{name:"Pineapple",icon:"🍍",price:25,time:10,yield:22,sell:12,type:"grain"},
+    Cherry:{name:"Cherry",icon:"🍒",price:35,time:10,yield:18,sell:15,type:"grain"},
+    Grape:{name:"Grape",icon:"🍇",price:40,time:10,yield:20,sell:18,type:"grain"},
+    Banana:{name:"Banana",icon:"🍌",price:30,time:10,yield:25,sell:14,type:"grain"},
+    Peach:{name:"Peach",icon:"🍑",price:45,time:15,yield:12,sell:22,type:"fruit"},
+    Lemon:{name:"Lemon",icon:"🍋",price:50,time:15,yield:15,sell:25,type:"fruit"},
+    Coconut:{name:"Coconut",icon:"🥥",price:70,time:15,yield:10,sell:32,type:"fruit"},
+    Mango:{name:"Mango",icon:"🥭",price:60,time:15,yield:13,sell:28,type:"fruit"},
+    Blueberry:{name:"Blueberry",icon:"🫐",price:55,time:15,yield:14,sell:26,type:"fruit"},
+    Kiwi:{name:"Kiwi",icon:"🥝",price:65,time:15,yield:11,sell:30,type:"fruit"}
 };
 
 const EMOJIS = ['😊', '🤔', '😴', '💪', '❤️', '💰', '🌾', '💦', '🎉', '✨', '🌟', '🌈'];
@@ -1044,80 +1046,80 @@ const SEASON_GOALS = [
     // Easy goals (1-2 crops)
     {
         requirements: [
-            {crop: 'Wheat', amount: 100}
+            {crop: 'Pineapple', amount: 100}
         ],
         reward_gold: 500, reward_gems: 5
     },
     {
         requirements: [
-            {crop: 'Carrot', amount: 80},
-            {crop: 'Wheat', amount: 30}
+            {crop: 'Cherry', amount: 80},
+            {crop: 'Pineapple', amount: 30}
         ],
         reward_gold: 700, reward_gems: 7
     },
     {
         requirements: [
-            {crop: 'Tomato', amount: 50},
-            {crop: 'Carrot', amount: 40}
+            {crop: 'Banana', amount: 70},
+            {crop: 'Peach', amount: 40}
         ],
         reward_gold: 800, reward_gems: 8
     },
     // Medium goals (2-3 crops)
     {
         requirements: [
-            {crop: 'Wheat', amount: 50},
-            {crop: 'Carrot', amount: 50},
-            {crop: 'Corn', amount: 40}
+            {crop: 'Pineapple', amount: 50},
+            {crop: 'Cherry', amount: 50},
+            {crop: 'Grape', amount: 40}
         ],
         reward_gold: 900, reward_gems: 9
     },
     {
         requirements: [
-            {crop: 'Carrot', amount: 50},
-            {crop: 'Wheat', amount: 100},
-            {crop: 'Apple', amount: 40}
+            {crop: 'Cherry', amount: 50},
+            {crop: 'Pineapple', amount: 100},
+            {crop: 'Mango', amount: 40}
         ],
         reward_gold: 1200, reward_gems: 12
     },
     {
         requirements: [
-            {crop: 'Tomato', amount: 60},
-            {crop: 'Strawberry', amount: 50}
+            {crop: 'Peach', amount: 60},
+            {crop: 'Lemon', amount: 50}
         ],
         reward_gold: 1100, reward_gems: 11
     },
     // Hard goals (3-4 crops)
     {
         requirements: [
-            {crop: 'Wheat', amount: 80},
-            {crop: 'Carrot', amount: 60},
-            {crop: 'Tomato', amount: 40},
-            {crop: 'Corn', amount: 50}
+            {crop: 'Pineapple', amount: 80},
+            {crop: 'Cherry', amount: 60},
+            {crop: 'Peach', amount: 40},
+            {crop: 'Grape', amount: 50}
         ],
         reward_gold: 1500, reward_gems: 15
     },
     {
         requirements: [
-            {crop: 'Apple', amount: 50},
-            {crop: 'Strawberry', amount: 60},
-            {crop: 'Watermelon', amount: 30}
+            {crop: 'Mango', amount: 50},
+            {crop: 'Lemon', amount: 60},
+            {crop: 'Coconut', amount: 30}
         ],
         reward_gold: 1800, reward_gems: 18
     },
     {
         requirements: [
-            {crop: 'Corn', amount: 70},
-            {crop: 'Tomato', amount: 50},
-            {crop: 'Pumpkin', amount: 20}
+            {crop: 'Grape', amount: 70},
+            {crop: 'Peach', amount: 50},
+            {crop: 'Kiwi', amount: 20}
         ],
         reward_gold: 1400, reward_gems: 14
     },
     {
         requirements: [
-            {crop: 'Wheat', amount: 120},
-            {crop: 'Carrot', amount: 80},
-            {crop: 'Apple', amount: 60},
-            {crop: 'Strawberry', amount: 40}
+            {crop: 'Pineapple', amount: 120},
+            {crop: 'Cherry', amount: 80},
+            {crop: 'Mango', amount: 60},
+            {crop: 'Blueberry', amount: 40}
         ],
         reward_gold: 2000, reward_gems: 20
     }
