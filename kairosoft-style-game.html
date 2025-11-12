@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v2.6 - GOAL IS ON RIGHT NOW! ✅</div>
+            <div class="version">v3.0 - Seed Shop Uses Gold 💰</div>
         </div>
 
         <div id="main-area">
@@ -938,7 +938,7 @@
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
-                    <div class="panel-title" style="background:#32CD32;">🎯 SEASON GOAL (RIGHT SIDE ✅)</div>
+                    <div class="panel-title">🎯 SEASON GOAL</div>
                     <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
                         Loading...
                     </div>
@@ -1695,25 +1695,6 @@ class Game{
         this.renderSeedShop();
     }
 
-    buySeedPack(cropName){
-        const cost=30;
-        if(this.exp<cost){
-            alert('Not enough EXP! Need '+cost+' EXP');
-            return;
-        }
-
-        this.exp-=cost;
-
-        // Add seeds to inventory (free planting)
-        if(!this.seedInventory)this.seedInventory={};
-        this.seedInventory[cropName]=(this.seedInventory[cropName]||0)+5;
-
-        this.log('✅ Bought 5 '+cropName+' seeds!');
-        this.render();
-        this.renderShop();
-        this.renderSeedShop();
-    }
-
     buySpeedBooster(){
         const cost=20;
         if(this.exp<cost){
@@ -1831,13 +1812,17 @@ class Game{
         const s=document.getElementById('seed-shop');
         s.innerHTML = ''; // Clear existing content
 
-        const seedCost=30;
         for(const[name,crop]of Object.entries(CROPS)){
             const d=document.createElement('div');
             d.className='shop-item';
-            const owned = (this.seedInventory && this.seedInventory[name]) || 0;
-            d.innerHTML='<div class="shop-header"><span class="shop-name">'+crop.icon+' '+name+'</span><span class="shop-icon" style="font-size:20px;">'+crop.icon+'</span></div><div class="shop-info">Get 5 free seeds | Own: '+owned+'</div><div class="shop-price" style="background:#9370DB;">⭐ '+seedCost+' EXP</div>';
-            d.onclick=()=>this.buySeedPack(name);
+            const pr=crop.yield*crop.sell-crop.price;
+            const typeLabel = crop.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
+            d.innerHTML='<div class="shop-header"><span class="shop-name">'+name+'</span><span class="shop-icon">'+crop.icon+'</span></div><div class="shop-info">⏰'+crop.time+'s | '+typeLabel+' | 💰+'+pr+'g</div><div class="shop-price">💰 '+crop.price+' GOLD</div>';
+            d.onclick=()=>{
+                const e=this.plots.find(p=>!p.crop);
+                if(!e)return alert('No empty plots!');
+                this.plant(name,e.id);
+            };
             s.appendChild(d);
         }
     }
