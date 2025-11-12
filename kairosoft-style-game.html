@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v2.4 - Timer Moved to Right</div>
+            <div class="version">v2.5 - Timer & Goal on Right</div>
         </div>
 
         <div id="main-area">
@@ -902,16 +902,6 @@
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
-                    <div class="panel-title">🎯 SEASON GOAL</div>
-                    <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
-                        Loading...
-                    </div>
-                    <div id="progress-details" style="padding:5px 0;">
-                        <!-- Progress bars will be inserted here -->
-                    </div>
-                </div>
-
-                <div class="panel" style="margin-top:10px;">
                     <button class="btn btn-blue" onclick="game.waterAll()">💧 WATER</button>
                     <button class="btn btn-blue" onclick="game.fertAll()">🌱 FERTILIZE</button>
                     <button class="btn btn-yellow" onclick="game.harvestAll()">🌾 HARVEST</button>
@@ -935,7 +925,7 @@
                 <div id="farm-grid"></div>
             </div>
 
-            <!-- Right Panel - Timer & Upgrades -->
+            <!-- Right Panel - Timer, Goal & Upgrades -->
             <div>
                 <div class="panel">
                     <div class="panel-title">⏰ SEASON TIMER</div>
@@ -944,6 +934,16 @@
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="season-progress-bar" style="width:0%;background:#FF6347;"></div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:10px;">
+                    <div class="panel-title">🎯 SEASON GOAL</div>
+                    <div id="goal-text" style="text-align:center;padding:10px;font-weight:bold;font-size:11px;background:#FFE4B5;border:2px solid #333;margin-bottom:10px;">
+                        Loading...
+                    </div>
+                    <div id="progress-details" style="padding:5px 0;">
+                        <!-- Progress bars will be inserted here -->
                     </div>
                 </div>
 
