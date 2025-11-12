@@ -877,10 +877,8 @@
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
-                    <div class="panel-title">🏪 UPGRADE SHOP</div>
-                    <button class="btn" style="background:#9370DB;" onclick="game.showUpgradeShop()">
-                        💫 OPEN SHOP
-                    </button>
+                    <div class="panel-title">🌱 SEED SHOP</div>
+                    <div id="seed-shop" style="max-height:400px;overflow-y:auto;"></div>
                 </div>
 
                 <div class="panel" style="margin-top:10px;">
@@ -943,7 +941,7 @@
             <!-- Right Panel - Shop -->
             <div>
                 <div class="panel">
-                    <div class="panel-title">🏪 UPGRADE SHOP</div>
+                    <div class="panel-title">🏪 SHOP</div>
                     <div id="shop" style="max-height:400px;overflow-y:auto;"></div>
                 </div>
             </div>
@@ -960,19 +958,6 @@
                 <span id="modal-title">PLOT</span>
             </div>
             <div id="modal-body"></div>
-        </div>
-    </div>
-
-    <!-- Upgrade Shop Modal -->
-    <div id="upgrade-shop-modal" class="modal" style="z-index:1500;">
-        <div class="modal-content" style="max-width:700px;">
-            <div class="modal-header" style="background:#9370DB;">
-                <span class="close" onclick="closeUpgradeShop()">&times;</span>
-                <span>💫 UPGRADE SHOP</span>
-            </div>
-            <div id="upgrade-shop-body" style="padding:20px;">
-                <!-- Shop items will be inserted here -->
-            </div>
         </div>
     </div>
 
@@ -1189,6 +1174,7 @@ class Game{
             g.appendChild(p);
         }
         this.renderShop();
+        this.renderSeedShop();
         this.createCharacters();
         this.render();
         this.startCharacterMovement();
@@ -1604,51 +1590,6 @@ class Game{
         this.log('📅 Day '+this.day);
         this.render();
     }
-    showUpgradeShop(){
-        const modal=document.getElementById('upgrade-shop-modal');
-        const body=document.getElementById('upgrade-shop-body');
-
-        let html='<div style="text-align:center;margin-bottom:20px;font-size:18px;font-weight:bold;color:#9370DB;">Your EXP: '+this.exp+'</div>';
-
-        // Worker upgrade
-        const workerCost=50*(this.characters.length-3);
-        html+='<div class="shop-item" onclick="game.buyWorker()">';
-        html+='<div class="shop-header">';
-        html+='<span class="shop-name">👷 Hire New Worker</span>';
-        html+='<span class="shop-icon" style="font-size:30px;">🧑‍🌾</span>';
-        html+='</div>';
-        html+='<div class="shop-info">Add one more worker to help harvest crops</div>';
-        html+='<div class="shop-price" style="background:#9370DB;">⭐ '+workerCost+' EXP</div>';
-        html+='</div>';
-
-        // Plot upgrade
-        const plotCost=100*(Math.floor((this.maxPlots-9)/3)+1);
-        html+='<div class="shop-item" onclick="game.buyPlots()">';
-        html+='<div class="shop-header">';
-        html+='<span class="shop-name">🌾 Expand Farm (+3 plots)</span>';
-        html+='<span class="shop-icon" style="font-size:30px;">🏞️</span>';
-        html+='</div>';
-        html+='<div class="shop-info">Add 3 more farm plots to grow more crops</div>';
-        html+='<div class="shop-price" style="background:#9370DB;">⭐ '+plotCost+' EXP</div>';
-        html+='</div>';
-
-        // Seed packages
-        const seedCost=30;
-        for(const[name,crop]of Object.entries(CROPS)){
-            html+='<div class="shop-item" onclick="game.buySeedPack(\''+name+'\')">';
-            html+='<div class="shop-header">';
-            html+='<span class="shop-name">'+crop.icon+' '+name+' Seed Pack (x5)</span>';
-            html+='<span class="shop-icon" style="font-size:30px;">'+crop.icon+'</span>';
-            html+='</div>';
-            html+='<div class="shop-info">Get 5 '+name+' seeds for free planting</div>';
-            html+='<div class="shop-price" style="background:#9370DB;">⭐ '+seedCost+' EXP</div>';
-            html+='</div>';
-        }
-
-        body.innerHTML=html;
-        modal.style.display='block';
-    }
-
     buyWorker(){
         const cost=50*(this.characters.length-3);
         if(this.exp<cost){
@@ -1708,7 +1649,8 @@ class Game{
 
         this.log('✅ Hired '+config.name+'!');
         this.render();
-        closeUpgradeShop();
+        this.renderShop();
+        this.renderSeedShop();
     }
 
     buyPlots(){
@@ -1740,7 +1682,8 @@ class Game{
 
         this.log('✅ Expanded farm! +3 plots');
         this.render();
-        closeUpgradeShop();
+        this.renderShop();
+        this.renderSeedShop();
     }
 
     buySeedPack(cropName){
@@ -1758,7 +1701,8 @@ class Game{
 
         this.log('✅ Bought 5 '+cropName+' seeds!');
         this.render();
-        closeUpgradeShop();
+        this.renderShop();
+        this.renderSeedShop();
     }
 
     render(){
@@ -1810,6 +1754,13 @@ class Game{
     }
     renderShop(){
         const s=document.getElementById('shop');
+        s.innerHTML = ''; // Clear existing content
+
+        // Section: Seeds for planting (gold-based)
+        const seedHeader = document.createElement('div');
+        seedHeader.innerHTML = '<div style="background:#32CD32;color:white;padding:8px;text-align:center;font-weight:bold;font-size:11px;border:2px solid #333;margin-bottom:8px;text-shadow:1px 1px 0 #000;">🌾 SEEDS (GOLD)</div>';
+        s.appendChild(seedHeader);
+
         for(const[n,c]of Object.entries(CROPS)){
             const d=document.createElement('div');
             d.className='shop-item';
@@ -1817,6 +1768,42 @@ class Game{
             const typeLabel = c.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
             d.innerHTML='<div class="shop-header"><span class="shop-name">'+n+'</span><span class="shop-icon">'+c.icon+'</span></div><div class="shop-info">⏰'+c.time+'s | '+typeLabel+' | 💰+'+pr+'g</div><div class="shop-price">💰 '+c.price+' GOLD</div>';
             d.onclick=()=>{const e=this.plots.find(p=>!p.crop);if(!e)return alert('No empty plots!');this.plant(n,e.id);};
+            s.appendChild(d);
+        }
+
+        // Section: Upgrades (EXP-based)
+        const upgradeHeader = document.createElement('div');
+        upgradeHeader.innerHTML = '<div style="background:#9370DB;color:white;padding:8px;text-align:center;font-weight:bold;font-size:11px;border:2px solid #333;margin:15px 0 8px 0;text-shadow:1px 1px 0 #000;">⭐ UPGRADES (EXP)</div>';
+        s.appendChild(upgradeHeader);
+
+        // Worker upgrade
+        const workerCost=50*(this.characters.length-3);
+        const workerDiv=document.createElement('div');
+        workerDiv.className='shop-item';
+        workerDiv.innerHTML='<div class="shop-header"><span class="shop-name">👷 Hire Worker</span><span class="shop-icon" style="font-size:24px;">🧑‍🌾</span></div><div class="shop-info">Add one more worker to help harvest</div><div class="shop-price" style="background:#9370DB;">⭐ '+workerCost+' EXP</div>';
+        workerDiv.onclick=()=>this.buyWorker();
+        s.appendChild(workerDiv);
+
+        // Plot upgrade
+        const plotCost=100*(Math.floor((this.maxPlots-9)/3)+1);
+        const plotDiv=document.createElement('div');
+        plotDiv.className='shop-item';
+        plotDiv.innerHTML='<div class="shop-header"><span class="shop-name">🌾 Expand Farm</span><span class="shop-icon" style="font-size:24px;">🏞️</span></div><div class="shop-info">Add 3 more farm plots (+3 plots)</div><div class="shop-price" style="background:#9370DB;">⭐ '+plotCost+' EXP</div>';
+        plotDiv.onclick=()=>this.buyPlots();
+        s.appendChild(plotDiv);
+    }
+
+    renderSeedShop(){
+        const s=document.getElementById('seed-shop');
+        s.innerHTML = ''; // Clear existing content
+
+        const seedCost=30;
+        for(const[name,crop]of Object.entries(CROPS)){
+            const d=document.createElement('div');
+            d.className='shop-item';
+            const owned = (this.seedInventory && this.seedInventory[name]) || 0;
+            d.innerHTML='<div class="shop-header"><span class="shop-name">'+crop.icon+' '+name+'</span><span class="shop-icon" style="font-size:20px;">'+crop.icon+'</span></div><div class="shop-info">Get 5 free seeds | Own: '+owned+'</div><div class="shop-price" style="background:#9370DB;">⭐ '+seedCost+' EXP</div>';
+            d.onclick=()=>this.buySeedPack(name);
             s.appendChild(d);
         }
     }
@@ -1859,10 +1846,8 @@ class Game{
 }
 
 function closeModal(){document.getElementById('modal').style.display='none';}
-function closeUpgradeShop(){document.getElementById('upgrade-shop-modal').style.display='none';}
 window.onclick=e=>{
     if(e.target.id==='modal')closeModal();
-    if(e.target.id==='upgrade-shop-modal')closeUpgradeShop();
 };
 
 let game;
