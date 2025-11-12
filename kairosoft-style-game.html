@@ -861,7 +861,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v2.0 - Shop Reorganized</div>
+            <div class="version">v2.1 - Separate Shops</div>
         </div>
 
         <div id="main-area">
@@ -945,10 +945,10 @@
                 <div id="farm-grid"></div>
             </div>
 
-            <!-- Right Panel - Shop -->
+            <!-- Right Panel - Upgrades -->
             <div>
                 <div class="panel">
-                    <div class="panel-title">🏪 SHOP</div>
+                    <div class="panel-title" style="background:#9370DB;">⭐ UPGRADES</div>
                     <div id="shop" style="max-height:600px;overflow-y:auto;"></div>
                 </div>
             </div>
@@ -1763,31 +1763,11 @@ class Game{
         const s=document.getElementById('shop');
         s.innerHTML = ''; // Clear existing content
 
-        // Section: Seeds for planting (gold-based)
-        const seedHeader = document.createElement('div');
-        seedHeader.innerHTML = '<div style="background:#32CD32;color:white;padding:8px;text-align:center;font-weight:bold;font-size:11px;border:2px solid #333;margin-bottom:8px;text-shadow:1px 1px 0 #000;">🌾 SEEDS (GOLD)</div>';
-        s.appendChild(seedHeader);
-
-        for(const[n,c]of Object.entries(CROPS)){
-            const d=document.createElement('div');
-            d.className='shop-item';
-            const pr=c.yield*c.sell-c.price;
-            const typeLabel = c.type === 'grain' ? '🌾 Grain' : '🍎 Fruit';
-            d.innerHTML='<div class="shop-header"><span class="shop-name">'+n+'</span><span class="shop-icon">'+c.icon+'</span></div><div class="shop-info">⏰'+c.time+'s | '+typeLabel+' | 💰+'+pr+'g</div><div class="shop-price">💰 '+c.price+' GOLD</div>';
-            d.onclick=()=>{const e=this.plots.find(p=>!p.crop);if(!e)return alert('No empty plots!');this.plant(n,e.id);};
-            s.appendChild(d);
-        }
-
-        // Section: Upgrades (EXP-based)
-        const upgradeHeader = document.createElement('div');
-        upgradeHeader.innerHTML = '<div style="background:#9370DB;color:white;padding:8px;text-align:center;font-weight:bold;font-size:11px;border:2px solid #333;margin:15px 0 8px 0;text-shadow:1px 1px 0 #000;">⭐ UPGRADES (EXP)</div>';
-        s.appendChild(upgradeHeader);
-
         // Worker upgrade
         const workerCost=50*(this.characters.length-3);
         const workerDiv=document.createElement('div');
         workerDiv.className='shop-item';
-        workerDiv.innerHTML='<div class="shop-header"><span class="shop-name">👷 Hire Worker</span><span class="shop-icon" style="font-size:24px;">🧑‍🌾</span></div><div class="shop-info">Add one more worker to help harvest</div><div class="shop-price" style="background:#9370DB;">⭐ '+workerCost+' EXP</div>';
+        workerDiv.innerHTML='<div class="shop-header"><span class="shop-name">👷 Hire Worker</span><span class="shop-icon" style="font-size:30px;">🧑‍🌾</span></div><div class="shop-info">Add one more worker to help harvest crops</div><div class="shop-price" style="background:#9370DB;">⭐ '+workerCost+' EXP</div>';
         workerDiv.onclick=()=>this.buyWorker();
         s.appendChild(workerDiv);
 
@@ -1795,7 +1775,7 @@ class Game{
         const plotCost=100*(Math.floor((this.maxPlots-9)/3)+1);
         const plotDiv=document.createElement('div');
         plotDiv.className='shop-item';
-        plotDiv.innerHTML='<div class="shop-header"><span class="shop-name">🌾 Expand Farm</span><span class="shop-icon" style="font-size:24px;">🏞️</span></div><div class="shop-info">Add 3 more farm plots (+3 plots)</div><div class="shop-price" style="background:#9370DB;">⭐ '+plotCost+' EXP</div>';
+        plotDiv.innerHTML='<div class="shop-header"><span class="shop-name">🌾 Expand Farm</span><span class="shop-icon" style="font-size:30px;">🏞️</span></div><div class="shop-info">Add 3 more farm plots to grow more crops</div><div class="shop-price" style="background:#9370DB;">⭐ '+plotCost+' EXP</div>';
         plotDiv.onclick=()=>this.buyPlots();
         s.appendChild(plotDiv);
     }
