@@ -433,11 +433,47 @@
             font-size: 50px;
             filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3));
             animation: grow 0.5s;
+            transition: transform 0.3s ease-in-out;
         }
 
         @keyframes grow {
             0% { transform: scale(0); }
             100% { transform: scale(1); }
+        }
+
+        /* Growth stages */
+        .crop-icon.stage-sprout {
+            font-size: 20px;
+            transform: scale(0.5);
+            opacity: 0.7;
+        }
+
+        .crop-icon.stage-growing {
+            font-size: 35px;
+            transform: scale(0.75);
+            opacity: 0.85;
+        }
+
+        .crop-icon.stage-maturing {
+            font-size: 45px;
+            transform: scale(0.9);
+            opacity: 0.95;
+        }
+
+        .crop-icon.stage-ready {
+            font-size: 50px;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        .plot.growing .crop-icon {
+            animation: wiggle 2s ease-in-out infinite;
         }
 
         .crop-name {
@@ -861,7 +897,7 @@
     <div id="game">
         <div id="header">
             <h1>🌾 GLORIA'S MAGIC FARM 🌾</h1>
-            <div class="version">v3.1 - New Tropical Fruits 🍍🍒🍇</div>
+            <div class="version">v3.2 - Growing Animation 🌱🌿🍍</div>
         </div>
 
         <div id="main-area">
@@ -1771,11 +1807,36 @@ class Game{
                 const rdy=p.remaining <= 0;
                 d.className='plot '+(rdy?'ready':'growing');
 
+                // Calculate growth progress
+                const totalTime = p.crop.time;
+                const elapsed = totalTime - p.remaining;
+                const progress = elapsed / totalTime;
+
+                // Determine growth stage and icon
+                let cropIcon, growthStage, stageName;
+                if(rdy){
+                    cropIcon = p.crop.icon;
+                    growthStage = 'stage-ready';
+                    stageName = 'Ready!';
+                } else if(progress < 0.33){
+                    cropIcon = '🌱'; // Sprout
+                    growthStage = 'stage-sprout';
+                    stageName = 'Sprouting';
+                } else if(progress < 0.66){
+                    cropIcon = '🌿'; // Growing
+                    growthStage = 'stage-growing';
+                    stageName = 'Growing';
+                } else {
+                    cropIcon = p.crop.icon; // Actual fruit, but smaller
+                    growthStage = 'stage-maturing';
+                    stageName = 'Maturing';
+                }
+
                 const timerHtml = rdy
                     ? '<div class="timer ready">✅ READY!</div>'
                     : '<div class="timer">⏰ '+p.remaining+'s</div>';
 
-                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="crop"><div class="crop-icon">'+p.crop.icon+'</div><div class="crop-name">'+p.crop.name+'</div>'+timerHtml+'</div>';
+                d.innerHTML='<div class="plot-id">#'+i+'</div><div class="crop"><div class="crop-icon '+growthStage+'">'+cropIcon+'</div><div class="crop-name">'+p.crop.name+' - '+stageName+'</div>'+timerHtml+'</div>';
             }else{
                 d.className='plot';
                 d.innerHTML='<div class="plot-id">#'+i+'</div><div class="empty-plot">CLICK<br>TO PLANT</div>';
@@ -1848,10 +1909,30 @@ class Game{
                     buttonsHtml+='<div style="text-align:center;font-size:10px;margin-top:5px;color:#666;">You have '+this.speedBoosters+' booster(s)</div>';
                 }
             }
+            // Calculate growth stage for modal
+            const totalTime = p.crop.time;
+            const elapsed = totalTime - p.remaining;
+            const progress = elapsed / totalTime;
+            const progressPct = Math.floor(progress * 100);
+
+            let stageText;
+            if(rdy){
+                stageText = '✅ Ready to Harvest!';
+            } else if(progress < 0.33){
+                stageText = '🌱 Sprouting (Early Stage)';
+            } else if(progress < 0.66){
+                stageText = '🌿 Growing (Mid Stage)';
+            } else {
+                stageText = '🌺 Maturing (Late Stage)';
+            }
+
             b.innerHTML='<div style="text-align:center;margin:20px 0;"><div style="font-size:60px;">'+p.crop.icon+'</div><h3>'+p.crop.name+'</h3></div>'
             +'<div class="stat-line"><span>Type:</span><span>'+typeLabel+'</span></div>'
-            +'<div class="stat-line"><span>Time:</span><span>'+p.crop.time+' seconds</span></div>'
-            +'<div class="stat-line"><span>Status:</span><span>'+(rdy?'✅ READY':'⏰ '+p.remaining+' seconds remaining')+'</span></div>'
+            +'<div class="stat-line"><span>Growth Time:</span><span>'+p.crop.time+' seconds</span></div>'
+            +'<div class="stat-line"><span>Growth Stage:</span><span>'+stageText+'</span></div>'
+            +'<div class="stat-line"><span>Progress:</span><span>'+progressPct+'%</span></div>'
+            +'<div style="margin:10px 0;"><div style="height:12px;background:#ddd;border:2px solid #333;border-radius:6px;overflow:hidden;"><div style="height:100%;width:'+progressPct+'%;background:linear-gradient(90deg, #32CD32, #FFD700);transition:width 0.3s;"></div></div></div>'
+            +'<div class="stat-line"><span>Time Remaining:</span><span>'+(rdy?'✅ READY':'⏰ '+p.remaining+'s')+'</span></div>'
             +'<div style="margin-top:15px;">'+buttonsHtml+'</div>';
         }else{
             b.innerHTML='<p style="text-align:center;margin:20px 0;">Choose a crop to plant:</p><div id="crops"></div>';
